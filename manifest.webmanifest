@@ -1,6 +1,6 @@
 {
-  "name": "Grunt Farmdown Ranker",
-  "short_name": "Grunt Rank",
+  "name": "Rocket Farmdown",
+  "short_name": "Rocket Rank",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

@@ -1,7 +1,7 @@
-// Usage: node scripts/build.js <gamemaster.min.json> <rocketLineups.json> [gamemasterDate] [lineupsDate]
-// Injects compacted fallback data into src/app.html -> index.html (GitHub Pages) and artifact.html (preview)
-const fs=require('fs'),path=require('path');const root=path.join(__dirname,'..');
-const src=fs.readFileSync(path.join(root,'src/app.html'),'utf8');
+// Usage: node build.js <gamemaster.min.json> <rocketLineups.json> [gamemasterDate] [lineupsDate]
+// Injects compacted fallback data into app.html -> index.html (GitHub Pages) and artifact.html (preview)
+const fs=require('fs'),path=require('path');const root=__dirname;
+const src=fs.readFileSync(path.join(root,'app.html'),'utf8');
 const tf=src.match(/\/\/<transform>([\s\S]*?)\/\/<\/transform>/)[1];
 const {compactGM,compactRocket}=new Function(tf+';return {compactGM,compactRocket};')();
 const gm=compactGM(JSON.parse(fs.readFileSync(process.argv[2],'utf8')));

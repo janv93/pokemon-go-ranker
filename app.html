@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Grunt Farmdown Ranker</title>
+<title>Rocket Farmdown</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <meta name="theme-color" content="#0e141c">
 <link rel="manifest" href="manifest.webmanifest">
@@ -24,7 +24,7 @@ main{max-width:620px;margin:0 auto;grid-template-columns:minmax(0,1fr);padding-b
 label,.lbl{font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);display:block;margin-bottom:6px}
 input,select{width:100%;box-sizing:border-box;font:inherit;font-size:1.05rem;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg)}
 input:focus,select:focus,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
-.types{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+.types{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
 .ty{font:inherit;font-size:.75rem;letter-spacing:-.01em;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500;padding:8px 2px;border-radius:8px;border:2px solid transparent;cursor:pointer;opacity:.55}
 .ty[aria-pressed="true"]{opacity:1;border-color:var(--fg)}
 .ty:hover{opacity:.85}
@@ -67,7 +67,6 @@ tr.row.top td.n:first-of-type{color:var(--good)}
 .note{margin:0;font-size:.8rem;color:var(--muted);text-align:center;line-height:1.5}
 .note a{color:var(--accent)}
 .err{color:var(--muted);margin:0}
-@media (max-width:340px){.types{grid-template-columns:repeat(4,minmax(0,1fr))}}
 @media (max-width:420px){table{font-size:.9rem}td,th{padding-left:4px;padding-right:4px}.shi{margin-left:3px}}
 </style>
 </head>
@@ -75,13 +74,13 @@ tr.row.top td.n:first-of-type{color:var(--good)}
 <main>
 <form class="card" id="f" autocomplete="off" onsubmit="return false">
 <div class="tlr"><label for="tl">Trainer lvl</label><input id="tl" type="number" inputmode="numeric" min="8" max="80" value="50"></div>
-<div class="types" id="g" role="group" aria-label="Grunt type"></div>
+<div class="types" id="g" role="group" aria-label="Opponent"></div>
 </form>
 <details class="card" id="slots"><summary>Lineup</summary><div id="lineup"></div></details>
 <section class="card">
 <div id="out" aria-live="polite"></div>
 </section>
-<p class="note">Speed relative to #1 at defeating all 3 grunt Pokémon with fast moves only, averaged over every possible lineup. Assumes level 50 hundos. * Elite or legacy move. Grunt stats: Pokebattler 2021 formula, measured up to trainer level 50 (higher levels use the level 50 values).<br><span id="src"></span></p>
+<p class="note">Speed relative to #1 at defeating all 3 Rocket Pokémon with fast moves only, averaged over every possible lineup. Assumes level 50 hundos. * Elite or legacy move. Grunt stats: Pokebattler 2021 formula, measured up to trainer level 50 (higher levels use the level 50 values). Leader stats are ×1.05, Giovanni's ×1.15.<br><span id="src"></span></p>
 </main>
 <script>
 //<transform>
@@ -92,7 +91,9 @@ const sh=byId.get(id+'_shadow');if(sh&&sh.released!==false)f|=1;if(t.includes('m
 const e=[id,x.speciesName,x.baseStats.atk,x.baseStats.def,x.baseStats.hp,x.types.filter(y=>y&&y!=='none').join('/'),fm(x.fastMoves),f];if(sh&&sh.fastMoves&&fm(sh.fastMoves).join()!==e[6].join())e.push(fm(sh.fastMoves));p.push(e);
 function fm(l){return (l||[]).filter(k=>m[k]).map(k=>(el.includes(k)||lg.includes(k)?'*':'')+k);}});
 return {t:String(gm.timestamp||''),m,p};}
-function compactRocket(r){return {g:r.filter(x=>/grunt/i.test(x.title||'')&&/grunt/i.test(x.name||'')).map(x=>[x.name,x.type||'',[x.firstPokemon,x.secondPokemon,x.thirdPokemon].map(s=>(s||[]).map(p=>p.name))])};}
+function rankMultiplier(title){if(/boss/i.test(title))return 1.15;if(/leader/i.test(title))return 1.05;return 1;}
+function isOpponent(x){const t=x.title||'';return /grunt/i.test(t)&&/grunt/i.test(x.name||'')||/leader|boss/i.test(t);}
+function compactRocket(r){return {g:r.filter(isOpponent).map(x=>[x.name,x.type||'',[x.firstPokemon,x.secondPokemon,x.thirdPokemon].map(s=>(s||[]).map(p=>p.name)),rankMultiplier(x.title||'')])};}
 //</transform>
 let GM=/*GM*/null/*/GM*/;
 let RK=/*RK*/null/*/RK*/;
@@ -130,15 +131,18 @@ let shown=50,open=null;
 
 let GG=null,GGD=null;
 // group grunts of the same type (male + female) into one option
-function grunts(){if(GGD===RK)return GG;GGD=RK;const m=new Map();RK.g.forEach(g=>{if(/decoy/i.test(g[0]))return;const k=g[1]?g[1][0].toUpperCase()+g[1].slice(1)+'-type':'No type';if(!m.has(k))m.set(k,{label:k,m:[]});m.get(k).m.push(g);});GG=[...m.values()];return GG;}
+function grunts(){if(GGD===RK)return GG;GGD=RK;const m=new Map();RK.g.forEach(g=>{if(/decoy/i.test(g[0]))return;const k=groupLabel(g);if(!m.has(k))m.set(k,{label:k,m:[]});m.get(k).m.push(g);});GG=[...m.values()];return GG;}
+function groupLabel(g){if(g[3]>1)return g[0];if(g[1])return g[1][0].toUpperCase()+g[1].slice(1)+'-type';return 'No type';}
+function buttonText(g){if(g[3]>1)return g[0];if(g[1])return g[1][0].toUpperCase()+g[1].slice(1);return 'No type';}
+function buttonColor(g){if(g[3]>1)return '#3d4450';return TC[(g[1]||'').toLowerCase()]||'#8a94a0';}
 function sex(g){const s=g[0].match(/\b(Male|Female)\b/);return s?s[1]:g[0];}
 function txt(h){const n=parseInt(h.slice(1),16);return ((n>>16&255)*.299+(n>>8&255)*.587+(n&255)*.114)>150?'#1b1b1b':'#fff';}
 function fillGrunts(){const gs=grunts();let i=gs.findIndex(g=>g.label===S.gn);if(i<0)i=Math.min(S.g||0,gs.length-1);S.g=i;
-$('g').innerHTML=gs.map((g,j)=>{const t=(g.m[0][1]||'').toLowerCase(),c=TC[t]||'#8a94a0';return '<button type="button" class="ty" data-i="'+j+'" aria-pressed="'+(j===i)+'" style="background:'+c+';color:'+txt(c)+'">'+esc(t?t[0].toUpperCase()+t.slice(1):'No type')+'</button>';}).join('');}
+$('g').innerHTML=gs.map((g,j)=>{const c=buttonColor(g.m[0]);return '<button type="button" class="ty" data-i="'+j+'" aria-pressed="'+(j===i)+'" style="background:'+c+';color:'+txt(c)+'">'+esc(buttonText(g.m[0]))+'</button>';}).join('');}
 function num(id,lo,hi,d){const v=parseInt($(id).value,10);return isFinite(v)?Math.min(hi,Math.max(lo,v)):d;}
 
 function enemies(){const G=grunts()[S.g];const rc=rcpm(S.tl)*RCM;
-return G.m.map(g=>({lb:sex(g),slots:g[2].map((s,si)=>s.map(n=>{const x=resolve(n),k=g[0]+'|'+si+':'+n;return {n,k,x,on:!!x,types:x?x[5].split('/'):[],def:x?0.8*(x[3]+15)*rc:0,hp:x?Math.floor(1.1*(x[4]+9)*rc):0};}))}));}
+return G.m.map(g=>({lb:sex(g),slots:g[2].map((s,si)=>s.map(n=>{const x=resolve(n),k=g[0]+'|'+si+':'+n;return {n,k,x,on:!!x,types:x?x[5].split('/'):[],def:x?0.8*(x[3]+15)*rc*g[3]:0,hp:x?Math.floor(1.1*(x[4]+9)*rc*g[3]):0};}))}));}
 
 // time = average over lineups (male/female) of the sum over slots of the average over that slot's selected Pokémon
 function rank(E){const cp=cpm(S.pl),act=E.map(v=>({lb:v.lb,s:v.slots.map(s=>s.filter(e=>e.on))})).filter(v=>v.s.every(s=>s.length));const rows=[];
@@ -180,15 +184,15 @@ $('out').addEventListener('click',e=>{const tr=e.target.closest('tr.row');if(!tr
 
 function init(){$('tl').value=S.tl;fillGrunts();setSrc();run();}
 // cached live data from earlier visits (drop caches from older versions)
-try{['rf-gm','rf-gm2','rf-gm3'].forEach(k=>localStorage.removeItem(k));}catch(e){}
-(()=>{const g=ls.get('rf-gm4'),r=ls.get('rf-rk');if(g&&g.d&&g.d.p){GM=g.d;GMT=g.c;GMF=false;}if(r&&r.d&&r.d.g&&r.d.g.length){RK=r.d;RKT=r.c;RKF=false;}})();
+try{['rf-gm','rf-gm2','rf-gm3','rf-rk'].forEach(k=>localStorage.removeItem(k));}catch(e){}
+(()=>{const g=ls.get('rf-gm4'),r=ls.get('rf-rk2');if(g&&g.d&&g.d.p){GM=g.d;GMT=g.c;GMF=false;}if(r&&r.d&&r.d.g&&r.d.g.length){RK=r.d;RKT=r.c;RKF=false;}})();
 init();
 
 // refresh live data (at most every 3 h)
-(async()=>{const now=Date.now(),g=ls.get('rf-gm4')||{},r=ls.get('rf-rk')||{};let ch=false;
+(async()=>{const now=Date.now(),g=ls.get('rf-gm4')||{},r=ls.get('rf-rk2')||{};let ch=false;
 if(now-(r.t||0)>108e5){try{const res=await fetch('https://raw.githubusercontent.com/bigfoott/ScrapedDuck/data/rocketLineups.json',{cache:'no-cache'});if(res.ok){const d=compactRocket(await res.json());if(d.g.length){let c=new Date().toISOString();
 try{const a=await fetch('https://api.github.com/repos/bigfoott/ScrapedDuck/commits?sha=data&path=rocketLineups.json&per_page=1');if(a.ok){const j=await a.json();c=j[0].commit.committer.date;}}catch(e){}
-RK=d;RKT=c;RKF=false;ls.set('rf-rk',{d,c,t:now});ch=true;}}}catch(e){}}
+RK=d;RKT=c;RKF=false;ls.set('rf-rk2',{d,c,t:now});ch=true;}}}catch(e){}}
 if(now-(g.t||0)>108e5){try{const res=await fetch('https://raw.githubusercontent.com/pvpoke/pvpoke/master/src/data/gamemaster.min.json',{cache:'no-cache'});if(res.ok){const d=compactGM(await res.json());if(d.p.length>500){let c=new Date().toISOString();try{const a=await fetch('https://api.github.com/repos/pvpoke/pvpoke/commits?path=src/data/gamemaster.min.json&per_page=1');if(a.ok){const j=await a.json();c=j[0].commit.committer.date;}}catch(e){}GM=d;GMT=c;GMF=false;IDX=null;ls.set('rf-gm4',{d,c,t:now});ch=true;}}}catch(e){}}
 if(ch){fillGrunts();setSrc();run();}})();
 try{if('serviceWorker' in navigator&&!/claude/.test(location.hostname))navigator.serviceWorker.register('sw.js').catch(()=>{});}catch(e){}
