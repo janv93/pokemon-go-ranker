@@ -79,15 +79,15 @@ tr.row.top td.n:first-of-type{color:var(--good)}
 <section class="card">
 <div id="out" aria-live="polite"></div>
 </section>
-<p class="note">Speed relative to #1 at defeating all 3 grunt Pokémon with fast moves only, averaged over every possible lineup. Assumes level 50 hundos. * Elite or legacy move. Grunt stats: Pokebattler 2021 formula.<br><span id="src"></span></p>
+<p class="note">Speed relative to #1 at defeating all 3 grunt Pokémon with fast moves only, averaged over every possible lineup. Assumes level 50 hundos. * Elite or legacy move. Grunt stats: Pokebattler 2021 formula, measured up to trainer level 50 (higher levels use the level 50 values).<br><span id="src"></span></p>
 </main>
 <script>
 //<transform>
 function compactGM(gm){const m={};(gm.moves||[]).forEach(x=>{if(x.energyGain>0&&x.turns&&x.power>0)m[x.moveId]=[x.name,x.type,x.power,x.turns];});
-const byId=new Map(gm.pokemon.map(p=>[p.speciesId,p])),ids=new Set(byId.keys()),p=[];
+const byId=new Map(gm.pokemon.map(p=>[p.speciesId,p])),p=[];
 gm.pokemon.forEach(x=>{const id=x.speciesId;if(!x.baseStats||id.endsWith('_shadow'))return;const t=x.tags||[],el=x.eliteMoves||[],lg=x.legacyMoves||[];let f=0;
-if(ids.has(id+'_shadow'))f|=1;if(t.includes('mega'))f|=2;if(t.some(k=>k==='legendary'||k==='mythical'||k==='ultrabeast'))f|=4;if(x.released===false)f|=8;
-const e=[id,x.speciesName,x.baseStats.atk,x.baseStats.def,x.baseStats.hp,x.types.filter(y=>y&&y!=='none').join('/'),fm(x.fastMoves),f];const sh=byId.get(id+'_shadow');if(sh&&sh.fastMoves&&fm(sh.fastMoves).join()!==e[6].join())e.push(fm(sh.fastMoves));p.push(e);
+const sh=byId.get(id+'_shadow');if(sh&&sh.released!==false)f|=1;if(t.includes('mega'))f|=2;if(t.some(k=>k==='legendary'||k==='mythical'||k==='ultrabeast'))f|=4;if(x.released===false)f|=8;
+const e=[id,x.speciesName,x.baseStats.atk,x.baseStats.def,x.baseStats.hp,x.types.filter(y=>y&&y!=='none').join('/'),fm(x.fastMoves),f];if(sh&&sh.fastMoves&&fm(sh.fastMoves).join()!==e[6].join())e.push(fm(sh.fastMoves));p.push(e);
 function fm(l){return (l||[]).filter(k=>m[k]).map(k=>(el.includes(k)||lg.includes(k)?'*':'')+k);}});
 return {t:String(gm.timestamp||''),m,p};}
 function compactRocket(r){return {g:r.filter(x=>/grunt/i.test(x.title||'')&&/grunt/i.test(x.name||'')).map(x=>[x.name,x.type||'',[x.firstPokemon,x.secondPokemon,x.thirdPokemon].map(s=>(s||[]).map(p=>p.name))])};}
@@ -133,7 +133,7 @@ function sex(g){const s=g[0].match(/\b(Male|Female)\b/);return s?s[1]:g[0];}
 function txt(h){const n=parseInt(h.slice(1),16);return ((n>>16&255)*.299+(n>>8&255)*.587+(n&255)*.114)>150?'#1b1b1b':'#fff';}
 function fillGrunts(){const gs=grunts();let i=gs.findIndex(g=>g.label===S.gn);if(i<0)i=Math.min(S.g||0,gs.length-1);S.g=i;
 $('g').innerHTML=gs.map((g,j)=>{const t=(g.m[0][1]||'').toLowerCase(),c=TC[t]||'#8a94a0';return '<button type="button" class="ty" data-i="'+j+'" aria-pressed="'+(j===i)+'" style="background:'+c+';color:'+txt(c)+'">'+esc(t?t[0].toUpperCase()+t.slice(1):'No type')+'</button>';}).join('');}
-function num(id,lo,hi,d){const v=parseFloat($(id).value);return isFinite(v)?Math.min(hi,Math.max(lo,v)):d;}
+function num(id,lo,hi,d){const v=parseInt($(id).value,10);return isFinite(v)?Math.min(hi,Math.max(lo,v)):d;}
 
 function enemies(){const G=grunts()[S.g];const rc=rcpm(S.tl)*RCM;
 return G.m.map(g=>({lb:sex(g),slots:g[2].map((s,si)=>s.map(n=>{const x=resolve(n),k=g[0]+'|'+si+':'+n;return {n,k,x,on:!!x,types:x?x[5].split('/'):[],def:x?0.8*(x[3]+15)*rc:0,hp:x?Math.floor(1.1*(x[4]+9)*rc):0};}))}));}
@@ -173,11 +173,12 @@ $('src').textContent='Lineups: ScrapedDuck, '+f(RKT)+(RKF?' (fallback)':' (lates
 // events
 $('lineup').addEventListener('click',e=>{const c=e.target.closest('.chip');if(c&&matchMedia('(hover:none)').matches)c.classList.toggle('on');});
 $('g').addEventListener('click',e=>{const b=e.target.closest('[data-i]');if(!b)return;S.g=+b.dataset.i;open=null;[...$('g').children].forEach(x=>x.setAttribute('aria-pressed',x===b));run();});
-['tl'].forEach(id=>{$(id).addEventListener('input',run);$(id).addEventListener('focus',()=>$(id).select());});
+$('tl').addEventListener('input',run);$('tl').addEventListener('focus',()=>$('tl').select());$('tl').addEventListener('change',()=>{run();$('tl').value=S.tl;});
 $('out').addEventListener('click',e=>{const tr=e.target.closest('tr.row');if(!tr)return;open=open===tr.dataset.r?null:tr.dataset.r;draw();});
 
 function init(){$('tl').value=S.tl;fillGrunts();setSrc();run();}
-// cached live data from earlier visits
+// cached live data from earlier visits (drop caches from older versions)
+try{['rf-gm','rf-gm2','rf-gm3'].forEach(k=>localStorage.removeItem(k));}catch(e){}
 (()=>{const g=ls.get('rf-gm4'),r=ls.get('rf-rk');if(g&&g.d&&g.d.p){GM=g.d;GMT=g.c;GMF=false;}if(r&&r.d&&r.d.g&&r.d.g.length){RK=r.d;RKT=r.c;RKF=false;}})();
 init();
 
