@@ -84,10 +84,11 @@ tr.row.top td.n:first-of-type{color:var(--good)}
 <script>
 //<transform>
 function compactGM(gm){const m={};(gm.moves||[]).forEach(x=>{if(x.energyGain>0&&x.turns&&x.power>0)m[x.moveId]=[x.name,x.type,x.power,x.turns];});
-const ids=new Set(gm.pokemon.map(p=>p.speciesId)),p=[];
+const byId=new Map(gm.pokemon.map(p=>[p.speciesId,p])),ids=new Set(byId.keys()),p=[];
 gm.pokemon.forEach(x=>{const id=x.speciesId;if(!x.baseStats||id.endsWith('_shadow'))return;const t=x.tags||[],el=x.eliteMoves||[],lg=x.legacyMoves||[];let f=0;
 if(ids.has(id+'_shadow'))f|=1;if(t.includes('mega'))f|=2;if(t.some(k=>k==='legendary'||k==='mythical'||k==='ultrabeast'))f|=4;if(x.released===false)f|=8;
-p.push([id,x.speciesName,x.baseStats.atk,x.baseStats.def,x.baseStats.hp,x.types.filter(y=>y&&y!=='none').join('/'),(x.fastMoves||[]).filter(k=>m[k]).map(k=>(el.includes(k)||lg.includes(k)?'*':'')+k),f]);});
+const e=[id,x.speciesName,x.baseStats.atk,x.baseStats.def,x.baseStats.hp,x.types.filter(y=>y&&y!=='none').join('/'),fm(x.fastMoves),f];const sh=byId.get(id+'_shadow');if(sh&&sh.fastMoves&&fm(sh.fastMoves).join()!==e[6].join())e.push(fm(sh.fastMoves));p.push(e);
+function fm(l){return (l||[]).filter(k=>m[k]).map(k=>(el.includes(k)||lg.includes(k)?'*':'')+k);}});
 return {t:String(gm.timestamp||''),m,p};}
 function compactRocket(r){return {g:r.filter(x=>/grunt/i.test(x.title||'')&&/grunt/i.test(x.name||'')).map(x=>[x.name,x.type||'',[x.firstPokemon,x.secondPokemon,x.thirdPokemon].map(s=>(s||[]).map(p=>p.name))])};}
 //</transform>
@@ -143,7 +144,7 @@ if(!act.length)return rows;const multi=E.length>1;
 for(const x of GM.p){const f=x[7];if(f&8)continue;if((f&2)&&!S.mega)continue;if((f&4)&&!S.leg)continue;
 const types=x[5].split('/'),vs=[false];if((f&1)&&S.shadow)vs.push(true);
 for(const sh of vs){const A=(x[2]+S.ai)*cp*(sh?1.2:1);let best=null;
-for(const mk of x[6]){const el=mk[0]==='*';if(el&&!S.elite)continue;const id=el?mk.slice(1):mk,mv=GM.m[id];if(!mv)continue;
+for(const mk of (sh&&x[8])||x[6]){const el=mk[0]==='*';if(el&&!S.elite)continue;const id=el?mk.slice(1):mk,mv=GM.m[id];if(!mv)continue;
 const st=types.includes(mv[1])?1.2:1;let tot=0;const per=[0,0,0],cnt=[];
 for(const v of act){v.s.forEach((s,si)=>{let sum=0;for(const e of s){const d=Math.floor(0.5*mv[2]*(A/e.def)*st*eff(mv[1],e.types)*BONUS)+1,n=Math.ceil(e.hp/d);cnt.push([(multi?v.lb[0]+' ':'')+'S'+(si+1),e,n,d]);sum+=n*mv[3]*0.5;}per[si]+=sum/s.length/act.length;tot+=sum/s.length/act.length;});}
 if(!best||tot<best.tot-1e-9)best={tot,per,cnt,mv,el};}
@@ -177,15 +178,15 @@ $('out').addEventListener('click',e=>{const tr=e.target.closest('tr.row');if(!tr
 
 function init(){$('tl').value=S.tl;fillGrunts();setSrc();run();}
 // cached live data from earlier visits
-(()=>{const g=ls.get('rf-gm3'),r=ls.get('rf-rk');if(g&&g.d&&g.d.p){GM=g.d;GMT=g.c;GMF=false;}if(r&&r.d&&r.d.g&&r.d.g.length){RK=r.d;RKT=r.c;RKF=false;}})();
+(()=>{const g=ls.get('rf-gm4'),r=ls.get('rf-rk');if(g&&g.d&&g.d.p){GM=g.d;GMT=g.c;GMF=false;}if(r&&r.d&&r.d.g&&r.d.g.length){RK=r.d;RKT=r.c;RKF=false;}})();
 init();
 
 // refresh live data (at most every 3 h)
-(async()=>{const now=Date.now(),g=ls.get('rf-gm3')||{},r=ls.get('rf-rk')||{};let ch=false;
+(async()=>{const now=Date.now(),g=ls.get('rf-gm4')||{},r=ls.get('rf-rk')||{};let ch=false;
 if(now-(r.t||0)>108e5){try{const res=await fetch('https://raw.githubusercontent.com/bigfoott/ScrapedDuck/data/rocketLineups.json',{cache:'no-cache'});if(res.ok){const d=compactRocket(await res.json());if(d.g.length){let c=new Date().toISOString();
 try{const a=await fetch('https://api.github.com/repos/bigfoott/ScrapedDuck/commits?sha=data&path=rocketLineups.json&per_page=1');if(a.ok){const j=await a.json();c=j[0].commit.committer.date;}}catch(e){}
 RK=d;RKT=c;RKF=false;ls.set('rf-rk',{d,c,t:now});ch=true;}}}catch(e){}}
-if(now-(g.t||0)>108e5){try{const res=await fetch('https://raw.githubusercontent.com/pvpoke/pvpoke/master/src/data/gamemaster.min.json',{cache:'no-cache'});if(res.ok){const d=compactGM(await res.json());if(d.p.length>500){let c=new Date().toISOString();try{const a=await fetch('https://api.github.com/repos/pvpoke/pvpoke/commits?path=src/data/gamemaster.min.json&per_page=1');if(a.ok){const j=await a.json();c=j[0].commit.committer.date;}}catch(e){}GM=d;GMT=c;GMF=false;IDX=null;ls.set('rf-gm3',{d,c,t:now});ch=true;}}}catch(e){}}
+if(now-(g.t||0)>108e5){try{const res=await fetch('https://raw.githubusercontent.com/pvpoke/pvpoke/master/src/data/gamemaster.min.json',{cache:'no-cache'});if(res.ok){const d=compactGM(await res.json());if(d.p.length>500){let c=new Date().toISOString();try{const a=await fetch('https://api.github.com/repos/pvpoke/pvpoke/commits?path=src/data/gamemaster.min.json&per_page=1');if(a.ok){const j=await a.json();c=j[0].commit.committer.date;}}catch(e){}GM=d;GMT=c;GMF=false;IDX=null;ls.set('rf-gm4',{d,c,t:now});ch=true;}}}catch(e){}}
 if(ch){fillGrunts();setSrc();run();}})();
 try{if('serviceWorker' in navigator&&!/claude/.test(location.hostname))navigator.serviceWorker.register('sw.js').catch(()=>{});}catch(e){}
 </script>

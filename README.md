@@ -1,5 +1,5 @@
-https://janv93.github.io/pokemon-go-grunt-farmdown/
+https://janv93.github.io/pokemon-go-grunt-ranker/
 
-Pokémon Go ranker for fastest fast-move-only Pokemons for non-leader grunts. Gets always-up-to-date data from PvPoke and ScrapedDuck.
+Pokémon GO ranking of the fastest Pokémon to farm Team GO Rocket grunts with fast moves only. Lineups come from ScrapedDuck and stats from PvPoke, always up to date, with bundled fallback data.
 
-This app was entirely built with the Claude app.
+Grunt stats use Pokebattler's 2021 Rocket formula. To refresh the fallback data: `node scripts/build.js gamemaster.min.json rocketLineups.json`.
