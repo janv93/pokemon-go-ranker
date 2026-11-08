@@ -9,7 +9,8 @@ const rk=compactRocket(JSON.parse(fs.readFileSync(process.argv[3],'utf8')));
 // optional 4th/5th args: ISO commit dates of the gamemaster and lineups files
 const gmt=process.argv[4]||new Date().toISOString(),rkt=process.argv[5]||new Date().toISOString();
 const J=o=>JSON.stringify(o).replace(/</g,'\\u003c');
-let out=src.replace('/*GM*/null/*/GM*/',()=>J(gm)).replace('/*RK*/null/*/RK*/',()=>J(rk))
+const iv=fs.readFileSync(path.join(root,'iv.js'),'utf8');
+let out=src.replace('<script src="iv.js"></script>',()=>'<script>\n'+iv+'</script>').replace('/*GM*/null/*/GM*/',()=>J(gm)).replace('/*RK*/null/*/RK*/',()=>J(rk))
  .replace("/*GMT*/''/*/GMT*/",()=>J(gmt)).replace("/*RKT*/''/*/RKT*/",()=>J(rkt));
 fs.writeFileSync(path.join(root,'index.html'),out);
 // artifact variant: page content only (host adds the document skeleton)

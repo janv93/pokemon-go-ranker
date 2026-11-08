@@ -1,6 +1,6 @@
 {
-  "name": "Rocket Farmdown",
-  "short_name": "Rocket Rank",
+  "name": "Pokémon GO Ranker",
+  "short_name": "GO Ranker",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

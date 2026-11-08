@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Rocket Farmdown</title>
+<title>Pokémon GO Ranker</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <meta name="theme-color" content="#0e141c">
 <link rel="manifest" href="manifest.webmanifest">
@@ -13,11 +13,12 @@
 <style>
 /* Layout: single column tool. Inputs card, grunt slots card, ranking table card. Same tokens as PvP IV Rank. */
 :root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
---bg:#eef2f7;--surface:#ffffff;--fg:#14202e;--muted:#5b6b7d;--line:#d3dce6;--accent:#1d5fd1;--good:#1b8a4b;
+--bg:#eef2f7;--surface:#ffffff;--fg:#14202e;--muted:#5b6b7d;--line:#d3dce6;--accent:#1d5fd1;--good:#1b8a4b;--white:#c9d3de;--black:#1b1b1b;
 --body:"IBM Plex Sans",system-ui,sans-serif;--mono:"IBM Plex Mono",ui-monospace,monospace}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e141c;--surface:#17202b;--fg:#e6edf5;--muted:#93a3b5;--line:#2a3746;--accent:#6ea2ff;--good:#5fd38f;color-scheme:dark}}
-:root[data-theme="dark"]{--bg:#0e141c;--surface:#17202b;--fg:#e6edf5;--muted:#93a3b5;--line:#2a3746;--accent:#6ea2ff;--good:#5fd38f;color-scheme:dark}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e141c;--surface:#17202b;--fg:#e6edf5;--muted:#93a3b5;--line:#2a3746;--accent:#6ea2ff;--good:#5fd38f;--white:#ffffff;--black:#5c5c5c;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0e141c;--surface:#17202b;--fg:#e6edf5;--muted:#93a3b5;--line:#2a3746;--accent:#6ea2ff;--good:#5fd38f;--white:#ffffff;--black:#5c5c5c;color-scheme:dark}
 [hidden]{display:none!important}
+html{scrollbar-gutter:stable}
 body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px}
 main{max-width:620px;margin:0 auto;grid-template-columns:minmax(0,1fr);padding-block:20px 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:16px}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;display:grid;grid-template-columns:minmax(0,1fr);gap:14px;min-width:0}
@@ -33,6 +34,8 @@ input:focus,select:focus,button:focus-visible{outline:2px solid var(--accent);ou
 #tl{width:80px;text-align:center;font-family:var(--mono)}
 details>summary{cursor:pointer;font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
 details[open]>summary{margin-bottom:10px}
+.note>summary{text-transform:none;letter-spacing:0;font-size:inherit}
+#src{white-space:pre-line}
 #lineup{display:grid;gap:10px}
 .slot{display:grid;grid-template-columns:52px 1fr;gap:8px;align-items:start}
 .slot .lbl{margin:8px 0 0}
@@ -67,11 +70,36 @@ tr.row.top td.n:first-of-type{color:var(--good)}
 .note{margin:0;font-size:.8rem;color:var(--muted);text-align:center;line-height:1.5}
 .note a{color:var(--accent)}
 .err{color:var(--muted);margin:0}
+.view{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;min-width:0}
+.tabs{display:grid;grid-template-columns:1fr 1fr;gap:4px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:4px}
+.tab{font:inherit;font-weight:500;padding:10px;border:0;border-radius:7px;background:none;color:var(--muted);cursor:pointer}
+.tab[aria-selected="true"]{background:var(--accent);color:var(--surface)}
+.ivs{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.ivs input{text-align:center;font-family:var(--mono)}
+.ac{position:relative}#sug{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:20;margin:0;padding:4px;list-style:none;background:var(--surface);border:1px solid var(--line);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.25);max-height:280px;overflow-y:auto}#sug li{padding:10px 12px;border-radius:6px;cursor:pointer}#sug li.on,#sug li:hover{background:var(--bg);color:var(--accent)}
+#iv table{font-family:var(--mono)}#iv th{font-size:.75rem;letter-spacing:.08em;padding:6px 10px}#iv td{padding:9px 10px}#iv th:last-child,#iv td:last-child{text-align:right}#iv tr:last-child td{border-bottom:0}
+.fam{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:baseline}.lnk{background:none;border:0;padding:2px 0;font:inherit;font-weight:500;color:var(--accent);text-decoration:underline;text-decoration-color:var(--muted);text-underline-offset:3px;cursor:pointer}.lnk:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.cur{padding:2px 0;font-weight:700}.pn{-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent}.ln{text-transform:uppercase;letter-spacing:.08em;font-weight:700;font-size:.95rem;-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent}.rl{width:4.5rem;font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);padding-top:5px}
 @media (max-width:420px){table{font-size:.9rem}td,th{padding-left:4px;padding-right:4px}.shi{margin-left:3px}}
 </style>
 </head>
 <body>
 <main>
+<div class="tabs" role="tablist"><button type="button" class="tab" role="tab" id="t-iv" aria-controls="iv" aria-selected="true">IV</button><button type="button" class="tab" role="tab" id="t-rocket" aria-controls="rocket" aria-selected="false">Rocket</button></div>
+<div class="view" id="iv" role="tabpanel" aria-labelledby="t-iv">
+<form class="card" id="ivf" style="position:relative" autocomplete="off">
+<div><label for="sp">Pokémon</label><div class="ac"><input id="sp" value="Cradily" role="combobox" aria-autocomplete="list" aria-controls="sug" aria-expanded="false" autocapitalize="words" spellcheck="false" enterkeyhint="go"><ul id="sug" role="listbox" hidden></ul></div></div>
+<div class="ivs">
+<div><label for="a">Atk</label><input id="a" type="number" inputmode="numeric" min="0" max="15" value="2"></div>
+<div><label for="d">Def</label><input id="d" type="number" inputmode="numeric" min="0" max="15" value="13"></div>
+<div><label for="s">HP</label><input id="s" type="number" inputmode="numeric" min="0" max="15" value="13"></div>
+</div>
+<button type="submit" tabindex="-1" aria-hidden="true" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;border:0;padding:0"></button>
+</form>
+<section class="card" id="ivout" aria-live="polite"></section>
+<p class="note" id="ivsrc"></p>
+</div>
+<div class="view" id="rocket" role="tabpanel" aria-labelledby="t-rocket" hidden>
 <form class="card" id="f" autocomplete="off" onsubmit="return false">
 <div class="tlr"><label for="tl">Trainer lvl</label><input id="tl" type="number" inputmode="numeric" min="8" max="80" value="50"></div>
 <div class="types" id="g" role="group" aria-label="Opponent"></div>
@@ -80,9 +108,19 @@ tr.row.top td.n:first-of-type{color:var(--good)}
 <section class="card">
 <div id="out" aria-live="polite"></div>
 </section>
-<p class="note">Speed relative to #1 at defeating all 3 Rocket Pokémon with fast moves only, averaged over every possible lineup. Assumes level 50 hundos. * Elite or legacy move. Grunt stats: Pokebattler 2021 formula, measured up to trainer level 50 (higher levels use the level 50 values). Leader stats are ×1.05, Giovanni's ×1.15.<br><span id="src"></span></p>
+<details class="note"><summary>Calculation details</summary>Speed relative to #1 at defeating all 3 Rocket Pokémon with fast moves only, averaged over every possible lineup. Assumes level 50 hundos. * Elite or legacy move. Grunt stats: Pokebattler 2021 formula, measured up to trainer level 50 (higher levels use the level 50 values). Leader stats are ×1.05, Giovanni's ×1.15.</details>
+<p class="note"><span id="src"></span></p>
+</div>
 </main>
 <script>
+(()=>{const tabs=[...document.querySelectorAll('.tab')];
+function show(tab){tabs.forEach(t=>{t.setAttribute('aria-selected',t===tab);document.getElementById(t.getAttribute('aria-controls')).hidden=t!==tab;});try{localStorage.setItem('tab',tab.id);}catch(e){}}
+document.querySelector('.tabs').addEventListener('click',e=>{const t=e.target.closest('.tab');if(t)show(t);});
+let saved=null;try{saved=document.getElementById(localStorage.getItem('tab'));}catch(e){}if(tabs.includes(saved))show(saved);})();
+</script>
+<script src="iv.js"></script>
+<script>
+(()=>{
 //<transform>
 function compactGM(gm){const m={};(gm.moves||[]).forEach(x=>{if(x.energyGain>0&&x.turns&&x.power>0)m[x.moveId]=[x.name,x.type,x.power,x.turns];});
 const byId=new Map(gm.pokemon.map(p=>[p.speciesId,p])),p=[];
@@ -90,7 +128,17 @@ gm.pokemon.forEach(x=>{const id=x.speciesId;if(!x.baseStats||id.endsWith('_shado
 const sh=byId.get(id+'_shadow');if(sh&&sh.released!==false)f|=1;if(t.includes('mega'))f|=2;if(t.some(k=>k==='legendary'||k==='mythical'||k==='ultrabeast'))f|=4;if(x.released===false)f|=8;
 const e=[id,x.speciesName,x.baseStats.atk,x.baseStats.def,x.baseStats.hp,x.types.filter(y=>y&&y!=='none').join('/'),fm(x.fastMoves),f];if(sh&&sh.fastMoves&&fm(sh.fastMoves).join()!==e[6].join())e.push(fm(sh.fastMoves));p.push(e);
 function fm(l){return (l||[]).filter(k=>m[k]).map(k=>(el.includes(k)||lg.includes(k)?'*':'')+k);}});
-return {t:String(gm.timestamp||''),m,p};}
+return {t:String(gm.timestamp||''),m,p,d:ivList(gm.pokemon)};}
+function ivList(raw){const byId=new Map(raw.map(p=>[p.speciesId,p]));
+const RG=/\((Alolan|Galarian|Hisuian|Paldean)\)/,TAU=/^Tauros \((Aqua|Blaze|Combat)\)/,mb=id=>id.split(/_(?:mega|primal)(?:_|$)/)[0],ism=id=>{const ps=id.split('_');return ps.includes('mega')||ps.includes('primal');},
+par=p=>ism(p.speciesId)?mb(p.speciesId):(p.family||{}).parent,
+reg=(id,k=0)=>{const p=byId.get(id),m=p.speciesName.match(RG);if(m)return m[1];if(TAU.test(p.speciesName))return 'Paldean';const pa=par(p);return pa&&byId.has(pa)&&k<5?reg(pa,k+1):'';},
+fkey=p=>{const q=ism(p.speciesId)&&byId.get(mb(p.speciesId))||p,fid=(q.family||{}).id;return fid?fid.replace(/_(ALOLAN?|GALARIAN|GALAR|HISUIAN|HISUI|PALDEAN|PALDEA)$/,''):'X_'+q.speciesId.split('_')[0];};
+let out=[];const seen=new Set();
+raw.forEach(p=>{const n=p.speciesName,id=p.speciesId,b=p.baseStats;if(!b||seen.has(n)||id.endsWith('_shadow'))return;seen.add(n);const pa=byId.get(par(p));out.push([n,b.atk,b.def,b.hp,fkey(p),reg(id),pa?pa.speciesName:'']);});
+const base={};out.forEach(x=>{if(!x[0].includes('('))base[x[0]]=x.slice(1,4).join();});
+out=out.filter(x=>!(x[0].includes('(')&&!RG.test(x[0])&&!TAU.test(x[0])&&base[x[0].split(' (')[0]]===x.slice(1,4).join()));
+const roots={};let k=0;out.forEach(x=>{x[4]=roots[x[4]]??=k++;});return out;}
 function rankMultiplier(title){if(/boss/i.test(title))return 1.15;if(/leader/i.test(title))return 1.05;return 1;}
 function isOpponent(x){const t=x.title||'';return /grunt/i.test(t)&&/grunt/i.test(x.name||'')||/leader|boss/i.test(t);}
 function compactRocket(r){return {g:r.filter(isOpponent).map(x=>[x.name,x.type||'',[x.firstPokemon,x.secondPokemon,x.thirdPokemon].map(s=>(s||[]).map(p=>p.name)),rankMultiplier(x.title||'')])};}
@@ -174,7 +222,7 @@ const best=BEST=ROWS[0].tot,list=ROWS,vis=ROWS.slice(0,20);
 o.innerHTML='<div class="tw"><table><thead><tr><th>#</th><th>Pokémon</th><th>Fast move</th><th class="n" title="Speed relative to #1">Speed %</th></tr></thead><tbody>'+vis.map(r=>rowHtml(r,r.tot===best)).join('')+'</tbody></table></div>';}
 
 function setSrc(){const f=t=>{const d=new Date(t);return isNaN(d)?String(t):d.toLocaleString([],{dateStyle:'medium',timeStyle:'short'});};
-$('src').textContent='Lineups: ScrapedDuck, '+f(RKT)+(RKF?' (fallback)':' (latest)')+' · Stats: PvPoke, '+f(GMT)+(GMF?' (fallback)':' (latest)');}
+$('src').textContent='Lineups: ScrapedDuck, '+f(RKT)+(RKF?' (fallback)':' (latest)')+'\nStats: PvPoke, '+f(GMT)+(GMF?' (fallback)':' (latest)');}
 
 // events
 $('lineup').addEventListener('click',e=>{const c=e.target.closest('.chip');if(c&&matchMedia('(hover:none)').matches)c.classList.toggle('on');});
@@ -182,20 +230,22 @@ $('g').addEventListener('click',e=>{const b=e.target.closest('[data-i]');if(!b)r
 $('tl').addEventListener('input',run);$('tl').addEventListener('focus',()=>$('tl').select());$('tl').addEventListener('change',()=>{run();$('tl').value=S.tl;});
 $('out').addEventListener('click',e=>{const tr=e.target.closest('tr.row');if(!tr)return;open=open===tr.dataset.r?null:tr.dataset.r;draw();});
 
-function init(){$('tl').value=S.tl;fillGrunts();setSrc();run();}
+function init(){$('tl').value=S.tl;fillGrunts();setSrc();shareGM();run();}
+function shareGM(){dispatchEvent(new CustomEvent('gamemaster',{detail:{d:GM.d,date:GMT,fallback:GMF}}));}
 // cached live data from earlier visits (drop caches from older versions)
-try{['rf-gm','rf-gm2','rf-gm3','rf-rk'].forEach(k=>localStorage.removeItem(k));}catch(e){}
-(()=>{const g=ls.get('rf-gm4'),r=ls.get('rf-rk2');if(g&&g.d&&g.d.p){GM=g.d;GMT=g.c;GMF=false;}if(r&&r.d&&r.d.g&&r.d.g.length){RK=r.d;RKT=r.c;RKF=false;}})();
+try{['rf-gm','rf-gm2','rf-gm3','rf-gm4','rf-rk','gm7'].forEach(k=>localStorage.removeItem(k));}catch(e){}
+(()=>{const g=ls.get('rf-gm5'),r=ls.get('rf-rk2');if(g&&g.d&&g.d.p){GM=g.d;GMT=g.c;GMF=false;}if(r&&r.d&&r.d.g&&r.d.g.length){RK=r.d;RKT=r.c;RKF=false;}})();
 init();
 
 // refresh live data (at most every 3 h)
-(async()=>{const now=Date.now(),g=ls.get('rf-gm4')||{},r=ls.get('rf-rk2')||{};let ch=false;
+(async()=>{const now=Date.now(),g=ls.get('rf-gm5')||{},r=ls.get('rf-rk2')||{};let ch=false;
 if(now-(r.t||0)>108e5){try{const res=await fetch('https://raw.githubusercontent.com/bigfoott/ScrapedDuck/data/rocketLineups.json',{cache:'no-cache'});if(res.ok){const d=compactRocket(await res.json());if(d.g.length){let c=new Date().toISOString();
 try{const a=await fetch('https://api.github.com/repos/bigfoott/ScrapedDuck/commits?sha=data&path=rocketLineups.json&per_page=1');if(a.ok){const j=await a.json();c=j[0].commit.committer.date;}}catch(e){}
 RK=d;RKT=c;RKF=false;ls.set('rf-rk2',{d,c,t:now});ch=true;}}}catch(e){}}
-if(now-(g.t||0)>108e5){try{const res=await fetch('https://raw.githubusercontent.com/pvpoke/pvpoke/master/src/data/gamemaster.min.json',{cache:'no-cache'});if(res.ok){const d=compactGM(await res.json());if(d.p.length>500){let c=new Date().toISOString();try{const a=await fetch('https://api.github.com/repos/pvpoke/pvpoke/commits?path=src/data/gamemaster.min.json&per_page=1');if(a.ok){const j=await a.json();c=j[0].commit.committer.date;}}catch(e){}GM=d;GMT=c;GMF=false;IDX=null;ls.set('rf-gm4',{d,c,t:now});ch=true;}}}catch(e){}}
+if(now-(g.t||0)>108e5){try{const res=await fetch('https://raw.githubusercontent.com/pvpoke/pvpoke/master/src/data/gamemaster.min.json',{cache:'no-cache'});if(res.ok){const d=compactGM(await res.json());if(d.p.length>500){let c=new Date().toISOString();try{const a=await fetch('https://api.github.com/repos/pvpoke/pvpoke/commits?path=src/data/gamemaster.min.json&per_page=1');if(a.ok){const j=await a.json();c=j[0].commit.committer.date;}}catch(e){}GM=d;GMT=c;GMF=false;IDX=null;ls.set('rf-gm5',{d,c,t:now});shareGM();ch=true;}}}catch(e){}}
 if(ch){fillGrunts();setSrc();run();}})();
 try{if('serviceWorker' in navigator&&!/claude/.test(location.hostname))navigator.serviceWorker.register('sw.js').catch(()=>{});}catch(e){}
+})();
 </script>
 </body>
 </html>
