@@ -174,8 +174,7 @@ function resolve(n){if(!IDX)index();return IDX.get(norm(n))||IDX.get(norm(n.repl
 
 const DEF={g:0,tl:50,pl:40,ai:15,shadow:true,mega:false,leg:true,elite:true,};
 let S=Object.assign({},DEF,ls.get('rf-set')||{},{off:undefined},{pl:50,ai:15,shadow:true,mega:false,leg:true,elite:true});
-const OPTS=[['shadow','Shadows'],['leg','Legendaries'],['mega','Megas'],['elite','Elite/legacy moves']];
-let shown=50,open=null;
+let open=null;
 
 let GG=null,GGD=null;
 // group grunts of the same type (male + female) into one option
@@ -218,7 +217,7 @@ let ROWS=[],BEST=1;
 function run(){S.tl=num('tl',8,80,50);S.gn=grunts()[S.g].label;ls.set('rf-set',S);
 const E=enemies();renderSlots(E);ROWS=rank(E);draw();}
 function draw(){const o=$('out');if(!ROWS.length){o.innerHTML='<p class="err">Select at least one Pokémon in every slot of a lineup.</p>';return;}
-const best=BEST=ROWS[0].tot,list=ROWS,vis=ROWS.slice(0,20);
+const best=BEST=ROWS[0].tot,vis=ROWS.slice(0,20);
 o.innerHTML='<div class="tw"><table><thead><tr><th>#</th><th>Pokémon</th><th>Fast move</th><th class="n" title="Speed relative to #1">Speed %</th></tr></thead><tbody>'+vis.map(r=>rowHtml(r,r.tot===best)).join('')+'</tbody></table></div>';}
 
 function setSrc(){const f=t=>{const d=new Date(t);return isNaN(d)?String(t):d.toLocaleString([],{dateStyle:'medium',timeStyle:'short'});};
