@@ -1,6 +1,6 @@
 https://janv93.github.io/pokemon-go-ranker/
 
-Installable as an app (PWA) and works offline with built-in fallback data.
+Installable as an app (PWA).
 
 Pokémon GO rankings, always up to date with data from PvPoke, ScrapedDuck and the game master:
 
