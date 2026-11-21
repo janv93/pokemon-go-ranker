@@ -1,5 +1,7 @@
 https://janv93.github.io/pokemon-go-ranker/
 
+Installable as an app (PWA) and works offline with built-in fallback data.
+
 Pokémon GO rankings, always up to date with data from PvPoke, ScrapedDuck and the game master:
 
 - **IV**: how your IVs rank in Little, Great, Ultra and Master League.
