@@ -332,7 +332,10 @@ function raidMove(id){if(RMD!==RM){RMD=RM;RMI=new Map(Object.entries(RM).map(([k
 const m=RMI.get(id.replace('TECHNO_BLAST_DOUSE','TECHNO_BLAST_WATER').replace(/_/g,''));if(m)return m;const hidden=id.match(/^HIDDEN_POWER_([A-Z]+)$/),base=hidden&&RMI.get('HIDDENPOWER');if(base)return [hidden[1].toLowerCase(),...base.slice(1)];}
 function resolveBoss(n){const s=n.replace(/^Shadow /i,''),m=s.match(/^(Mega|Primal) (.+?)(?: ([XYZ]))?$/i);
 if(m){const want=norm(m[2]+' ('+m[1]+(m[3]?' '+m[3]:'')+')');return GM.p.find(x=>norm(x[1])===want);}
-return resolve(s)||resolve(s.replace(/ \((Male|Female)\)$/i,''));}
+return resolve(s)||resolve(s.replace(/ \((Male|Female)\)$/i,''))||costumeBase(s);}
+// costumes and default forms ("Sun Crown Pikachu", "Espeon wearing a sun scarf", "Deoxys (Normal)") fall back to the plain Pokémon
+function costumeBase(s){const w=s.replace(/ \((Male|Female|Normal)\)$/i,'').replace(/ wearing .*$/i,'').split(' ');
+for(let i=0;i<w.length;i++){const x=resolve(w.slice(i).join(' '));if(x)return x;}}
 function raidBoss(label,x,tier){const [hp,bossCpm]=tier;const regular=l=>(l||[]).filter(k=>k[0]!=='*').map(raidMove).filter(Boolean);
 const fast=regular(x[6]).filter(f=>f[3]>0),charged=regular(GM.c[x[0]]).filter(c=>c[3]<0);
 return {label,tier,types:x[5].split('/'),atk:x[2],def:x[3],cpm:bossCpm,hp,moves:fast.flatMap(f=>charged.map(c=>[f,c]))};}
