@@ -406,7 +406,7 @@ RROWS=restoreOverall(savedOverall(totals));drawRaid();}
 function computeOverall(){const job=++overallJob,key=overallKey(),bosses=overallBosses(),totals=new Map();let i=0;overallRunning=key;
 const step=()=>{if(job!==overallJob)return;const end=performance.now()+40;
 while(i<bosses.length&&performance.now()<end)addOverallPoints(totals,bosses[i++]);
-const onOverall=RSEL===OVERALL.label&&!$('raid').hidden;
+const onOverall=RSEL===OVERALL.label;
 if(i<bosses.length){if(onOverall)$('rout').innerHTML='<p class="err">Calculating all-time ranking… '+i+' / '+bosses.length+' bosses</p>';setTimeout(step,0);return;}
 const saved=savedOverall(totals);overallRunning=null;ls.set('rf-overall7',{k:key,rows:saved});
 if(onOverall){RROWS=restoreOverall(saved);drawRaid();}};
