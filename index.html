@@ -449,7 +449,7 @@ function raidRowHtml(r){const k=r.x[0]+(r.sh?'_s':''),o=ROPEN===k;
 let h='<tr class="row'+(r.rk===1?' top':'')+'" data-r="'+k+'" aria-expanded="'+o+'"><td class="r">'+r.rk+'</td><td><span class="pk">'+nm(r)+'</span></td><td><span class="mv">'+dots([moveType(r.fk)])+moveName(r.fk)+'</span><br><span class="mv">'+dots([moveType(r.ck)])+moveName(r.ck)+'</span></td><td class="n" title="'+scoreTitle(r)+'">'+Math.round(r.score)+'</td></tr>';
 if(o)h+='<tr class="det"><td></td><td colspan="3"><table>'+raidDetail(r)+'</table></td></tr>';
 return h;}
-function drawRaid(){const o=$('rout');if(!RROWS.length){o.innerHTML='<p class="err">No attackers found.</p>';return;}
+function drawRaid(){const o=$('rout');if(!RROWS.length){o.innerHTML='<p class="err">'+(RSEL===CURRENT.label?'No 5★ or mega raids right now.':'No attackers found.')+'</p>';return;}
 const megas=RROWS.filter(r=>r.mega).slice(0,MEGA_SHOWN),rest=RROWS.filter(r=>!r.mega).slice(0,20),grp=(t,cut)=>'<tr class="grp'+(cut?' cut':'')+'"><td colspan="4">'+t+'</td></tr>';
 o.innerHTML='<div class="tw"><table><thead><tr><th>#</th><th>Pokémon</th><th>Moves</th><th class="n" title="Score relative to #1 of its group">Score %</th></tr></thead><tbody>'
 +(megas.length?grp('Top '+MEGA_SHOWN+' megas · one per team')+megas.map(raidRowHtml).join(''):'')+(rest.length?grp('Rest of the team',megas.length)+rest.map(raidRowHtml).join(''):'')+'</tbody></table></div>';}
