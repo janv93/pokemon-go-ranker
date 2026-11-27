@@ -260,7 +260,7 @@ $('out').addEventListener('click',e=>{const tr=e.target.closest('tr.row');if(!tr
 
 //<raid>
 const RAID_TIERS={'1':[600,0.5974],'2':[1800,0.67],'3':[3600,0.73],'4':[9000,1],'5':[15000,0.79],'6':[22500,0.79],shadow1:[600,0.5974],shadow3:[4000,0.76],shadow5:[15000,0.82],mega:[9000,0.79],legendaryMega:[22500,0.79],superMega:[25000,0.79],ultraBeast:[15000,0.79]};
-const BOSS_DELAY=2000,SWAP=1000,RELOBBY=15000,OVERALL_TOP=16,MAX_MEGA_MOVE_POWER=1.3;
+const BOSS_DELAY=2000,SWAP=1000,RELOBBY=15000,OVERALL_TOP=16,MAX_MEGA_MOVE_POWER=1.3,SIM_MOVESETS=5;
 // Average remote lobby for 4★ and up: you are maxed, the others bring the ~10th best non-mega counter at level 40 (Good Friend bonus for all)
 const LOBBY=[5,7,10],OTHER_RANK=10,OTHER_LEVEL=40,FRIEND=1.03;
 // Megas (incl. primals) are ranked on their own: only one per team, and it doesn't boost your own other attackers
@@ -311,20 +311,22 @@ function estimateTime(outgoing,maxHp,incoming,bossHp,lobby){const lives=bossHp*i
 function isLobby(boss){return boss.hp>=RAID_TIERS.mega[0];}
 function rankRaid(boss,limit){const cp=cpm(50),BD=(boss.def+15)*boss.cpm,lobby=isLobby(boss),candidates=[];
 for(const x of GM.p){const f=x[7];if(f&8)continue;const types=x[5].split('/'),variants=[false];if(f&1)variants.push(true);
-for(const sh of variants){const A=(x[2]+15)*cp*(sh?1.2:1),def=(x[3]+15)*cp*(sh?5/6:1),maxHp=Math.floor((x[4]+15)*cp);let best=null;
+for(const sh of variants){const A=(x[2]+15)*cp*(sh?1.2:1),def=(x[3]+15)*cp*(sh?5/6:1),maxHp=Math.floor((x[4]+15)*cp);const opts=[];
 for(const fk of (sh&&x[8])||x[6]){const F=raidMove(fk.replace('*',''));if(!F||F[3]<=0)continue;const fd=hitDamage(F,A,BD,types,boss.types,megaBonus(F,x,types));
 for(const ck of chargedMoves(x)){if(sh&&ck.replace('*','')==='RETURN')continue;const C=raidMove(ck.replace('*',''));if(!C||C[3]>=0)continue;const cd=hitDamage(C,A,BD,types,boss.types,megaBonus(C,x,types));
 const fasts=Math.ceil(-C[3]/F[3]),outgoing=(fasts*fd+cd)/((fasts*F[2]+C[2])/1000);
 const rates=boss.moves.map(p=>incomingDps(boss,p,def,types,outgoing)),mean=rates.reduce((s,r)=>s+r,0)/rates.length,est=estimateTime(outgoing,maxHp,mean,boss.hp,lobby);
-if(!best||est<best.est)best={x,sh,types,def,maxHp,est,fk,ck,F,C,fd,cd};}}
-if(best)candidates.push(best);}}
+opts.push({x,sh,types,def,maxHp,est,fk,ck,F,C,fd,cd});}}
+// keep the best-looking movesets; the simulation below picks among them
+if(opts.length){opts.sort((a,b)=>a.est-b.est);candidates.push({...opts[0],opts:opts.slice(0,SIM_MOVESETS)});}}}
 candidates.sort((a,b)=>a.est-b.est);
 const megas=candidates.filter(c=>isMega(c.x)),team=candidates.filter(c=>!isMega(c.x));
 const ref=team[Math.min(OTHER_RANK,team.length)-1],other=lobby&&ref?boss.hp/ref.est/1000*cpm(OTHER_LEVEL)/cp:0;
 // megas first, then the rest; each group ranked and scored on its own
-const ranked=list=>{const rows=list.slice(0,limit).map(c=>{let tot=0,faints=0,dps=0,n=0;
+const simulate=c=>{let tot=0,faints=0,dps=0,n=0;
 for(const N of lobby?LOBBY:[1])for(const m of boss.moves){const [t,f,d]=fight(c,boss,m,(N-1)*other);tot+=t;faints+=f;dps+=d;n++;}
-return {x:c.x,sh:c.sh,mega:isMega(c.x),fk:c.fk,ck:c.ck,fd:c.fd,cd:c.cd,tot:tot/n,faints:faints/n,dps:dps/n};});
+return {x:c.x,sh:c.sh,mega:isMega(c.x),fk:c.fk,ck:c.ck,fd:c.fd,cd:c.cd,tot:tot/n,faints:faints/n,dps:dps/n};};
+const ranked=list=>{const rows=list.slice(0,limit).map(c=>c.opts.map(simulate).reduce((a,b)=>b.dps>a.dps?b:a));
 rows.sort((a,b)=>b.dps-a.dps);rows.forEach((r,i)=>{r.rk=i+1;r.score=r.dps/rows[0].dps*100;});return rows;};
 return [...ranked(megas),...ranked(team)];}
 function overallTier(x){if(!(x[7]&2))return RAID_TIERS['5'];return x[7]&4?RAID_TIERS.legendaryMega:RAID_TIERS.mega;}
@@ -344,7 +346,7 @@ return finishOverall(saved.filter(r=>byId.has(r[0])).map(([id,sh,points,best])=>
 let keyFor=[],keyValue='';
 function overallKey(){if(keyFor[0]!==GM||keyFor[1]!==RM){keyFor=[GM,RM];keyValue=dataKey();}return keyValue;}
 let overallJob=0,overallRunning=null;
-function showOverall(){const saved=[ls.get('rf-overall7'),RO].find(s=>s&&s.k===overallKey());if(saved){RROWS=restoreOverall(saved.rows);drawRaid();return;}
+function showOverall(){const saved=[ls.get('rf-overall8'),RO].find(s=>s&&s.k===overallKey());if(saved){RROWS=restoreOverall(saved.rows);drawRaid();return;}
 $('rout').innerHTML='<p class="err">Calculating all-time ranking…</p>';if(overallRunning!==overallKey())computeOverall();}
 function showCurrent(){const totals=new Map();
 raidBosses().filter(b=>b.hp>=RAID_TIERS.mega[0]&&b.tier!==RAID_TIERS['4']).forEach(b=>{if(!RCACHE.has(b))RCACHE.set(b,rankRaid(b,100));addOverallPoints(totals,b,RCACHE.get(b));});
@@ -354,7 +356,7 @@ const step=()=>{if(job!==overallJob)return;const end=performance.now()+40;
 while(i<bosses.length&&performance.now()<end)addOverallPoints(totals,bosses[i++]);
 const onOverall=RSEL===OVERALL.label;
 if(i<bosses.length){if(onOverall)$('rout').innerHTML='<p class="err">Calculating all-time ranking… '+i+' / '+bosses.length+' bosses</p>';setTimeout(step,0);return;}
-const saved=savedOverall(totals);overallRunning=null;ls.set('rf-overall7',{k:key,rows:saved});
+const saved=savedOverall(totals);overallRunning=null;ls.set('rf-overall8',{k:key,rows:saved});
 if(onOverall){RROWS=restoreOverall(saved);drawRaid();}};
 step();}
 
@@ -392,7 +394,7 @@ document.querySelector('.tabs').addEventListener('click',()=>{if(RDIRTY)runRaid(
 function init(){$('tl').value=S.tl;fillGrunts();setSrc();shareGM();run();fillBosses();setRaidSrc();runRaid();}
 function shareGM(){dispatchEvent(new CustomEvent('gamemaster',{detail:{d:GM.d,date:GMT,fallback:GMF}}));}
 // cached live data from earlier visits (drop caches from older versions)
-try{['rf-gm','rf-gm2','rf-gm3','rf-gm4','rf-gm5','rf-rk','rf-rm','rf-rm2','rf-overall','rf-overall2','rf-overall3','rf-overall4','rf-overall5','rf-overall6','gm7'].forEach(k=>localStorage.removeItem(k));}catch(e){}
+try{['rf-gm','rf-gm2','rf-gm3','rf-gm4','rf-gm5','rf-rk','rf-rm','rf-rm2','rf-overall','rf-overall2','rf-overall3','rf-overall4','rf-overall5','rf-overall6','rf-overall7','gm7'].forEach(k=>localStorage.removeItem(k));}catch(e){}
 (()=>{const g=ls.get('rf-gm6'),r=ls.get('rf-rk2'),d=ls.get('rf-rd'),m=ls.get('rf-rm3');if(g&&g.d&&g.d.p&&g.d.c){GM=g.d;GMT=g.c;GMF=false;}if(r&&r.d&&r.d.g&&r.d.g.length){RK=r.d;RKT=r.c;RKF=false;}
 if(d&&d.d&&d.d.b&&d.d.b.length){RD=d.d;RDT=d.c;RDF=false;}if(m&&m.d&&Object.keys(m.d).length){RM=m.d;RMT=m.c;RMF=false;}})();
 init();
