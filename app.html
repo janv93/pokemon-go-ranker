@@ -280,9 +280,9 @@ const m=RMI.get(id.replace('TECHNO_BLAST_DOUSE','TECHNO_BLAST_WATER').replace(/_
 function resolveBoss(n){const s=n.replace(/^Shadow /i,''),m=s.match(/^(Mega|Primal) (.+?)(?: ([XYZ]))?$/i);
 if(m){const want=norm(m[2]+' ('+m[1]+(m[3]?' '+m[3]:'')+')');return GM.p.find(x=>norm(x[1])===want);}
 return resolve(s)||resolve(s.replace(/ \((Male|Female)\)$/i,''));}
-function raidBoss(label,x,[hp,bossCpm]){const regular=l=>(l||[]).filter(k=>k[0]!=='*').map(raidMove).filter(Boolean);
+function raidBoss(label,x,tier){const [hp,bossCpm]=tier;const regular=l=>(l||[]).filter(k=>k[0]!=='*').map(raidMove).filter(Boolean);
 const fast=regular(x[6]).filter(f=>f[3]>0),charged=regular(GM.c[x[0]]).filter(c=>c[3]<0);
-return {label,types:x[5].split('/'),atk:x[2],def:x[3],cpm:bossCpm,hp,moves:fast.flatMap(f=>charged.map(c=>[f,c]))};}
+return {label,tier,types:x[5].split('/'),atk:x[2],def:x[3],cpm:bossCpm,hp,moves:fast.flatMap(f=>charged.map(c=>[f,c]))};}
 let RBL=null,RBK=[];
 function raidBosses(){if(RBK[0]===RD&&RBK[1]===GM&&RBK[2]===RM)return RBL;RBK=[RD,GM,RM];const bosses=[];
 const seen=new Set();RD.b.forEach(([n,t])=>{const x=resolveBoss(n),tier=x&&raidTier(t,n,x),key=x&&x[0]+'|'+tier;if(!tier||seen.has(key))return;seen.add(key);
@@ -302,7 +302,7 @@ if(!bMv&&bNext<=Math.min(aHit,aEnd)){if(adv(bNext))break;bMv=bEn>=-BC[3]?BC:BF;b
 if(!aMv&&aEnd<=Math.min(bHit,bNext)){if(adv(aEnd))break;aMv=en>=cost?C:F;aHit=t+aMv[4];aEnd=t+aMv[2];continue;}
 const next=Math.min(aHit,bHit,aMv?aEnd:Infinity);if(adv(next))break;
 if(next===aHit){const d=Math.min(aMv===C?cd:fd,left);left-=d;dealt+=d;bEn=Math.min(100,bEn+d/2);en=aMv===C?en+C[3]:Math.min(100,en+F[3]);aHit=Infinity;}
-else if(next===bHit){const d=bMv===BC?bc:bf;if(d>=hp){faints++;hp=maxHp;en=0;aMv=null;aHit=Infinity;aEnd=t+SWAP+(faints%6?0:RELOBBY);}else{hp-=d;en=Math.min(100,en+d/2);}bMv=null;bHit=Infinity;}
+else if(next===bHit){const d=bMv===BC?bc:bf;if(d>=hp){faints++;hp=maxHp;en=0;aMv=null;aHit=Infinity;aEnd=t+SWAP+(faints%6?0:RELOBBY);if(faints%6===0)bNext=Math.max(bNext,aEnd);}else{hp-=d;en=Math.min(100,en+d/2);}bMv=null;bHit=Infinity;}
 else aMv=null;}
 return [t/1000,faints,dealt/t*1000];}
 function chargedMoves(x){const special='+'+x[0],moves=GM.c[x[0]]||[];if(raidMove(special))return [...moves,special];return moves;}
@@ -344,17 +344,17 @@ return finishOverall(saved.filter(r=>byId.has(r[0])).map(([id,sh,points,best])=>
 let keyFor=[],keyValue='';
 function overallKey(){if(keyFor[0]!==GM||keyFor[1]!==RM){keyFor=[GM,RM];keyValue=dataKey();}return keyValue;}
 let overallJob=0,overallRunning=null;
-function showOverall(){const saved=[ls.get('rf-overall6'),RO].find(s=>s&&s.k===overallKey());if(saved){RROWS=restoreOverall(saved.rows);drawRaid();return;}
+function showOverall(){const saved=[ls.get('rf-overall7'),RO].find(s=>s&&s.k===overallKey());if(saved){RROWS=restoreOverall(saved.rows);drawRaid();return;}
 $('rout').innerHTML='<p class="err">Calculating all-time ranking…</p>';if(overallRunning!==overallKey())computeOverall();}
 function showCurrent(){const totals=new Map();
-raidBosses().filter(b=>b.hp>=RAID_TIERS.mega[0]).forEach(b=>{if(!RCACHE.has(b))RCACHE.set(b,rankRaid(b,100));addOverallPoints(totals,b,RCACHE.get(b));});
+raidBosses().filter(b=>b.hp>=RAID_TIERS.mega[0]&&b.tier!==RAID_TIERS['4']).forEach(b=>{if(!RCACHE.has(b))RCACHE.set(b,rankRaid(b,100));addOverallPoints(totals,b,RCACHE.get(b));});
 RROWS=restoreOverall(savedOverall(totals));drawRaid();}
 function computeOverall(){const job=++overallJob,key=overallKey(),bosses=overallBosses(),totals=new Map();let i=0;overallRunning=key;
 const step=()=>{if(job!==overallJob)return;const end=performance.now()+40;
 while(i<bosses.length&&performance.now()<end)addOverallPoints(totals,bosses[i++]);
 const onOverall=RSEL===OVERALL.label&&!$('raid').hidden;
 if(i<bosses.length){if(onOverall)$('rout').innerHTML='<p class="err">Calculating all-time ranking… '+i+' / '+bosses.length+' bosses</p>';setTimeout(step,0);return;}
-const saved=savedOverall(totals);overallRunning=null;ls.set('rf-overall6',{k:key,rows:saved});
+const saved=savedOverall(totals);overallRunning=null;ls.set('rf-overall7',{k:key,rows:saved});
 if(onOverall){RROWS=restoreOverall(saved);drawRaid();}};
 step();}
 
@@ -392,7 +392,7 @@ document.querySelector('.tabs').addEventListener('click',()=>{if(RDIRTY)runRaid(
 function init(){$('tl').value=S.tl;fillGrunts();setSrc();shareGM();run();fillBosses();setRaidSrc();runRaid();}
 function shareGM(){dispatchEvent(new CustomEvent('gamemaster',{detail:{d:GM.d,date:GMT,fallback:GMF}}));}
 // cached live data from earlier visits (drop caches from older versions)
-try{['rf-gm','rf-gm2','rf-gm3','rf-gm4','rf-gm5','rf-rk','rf-rm','rf-rm2','rf-overall','rf-overall2','rf-overall3','rf-overall4','rf-overall5','gm7'].forEach(k=>localStorage.removeItem(k));}catch(e){}
+try{['rf-gm','rf-gm2','rf-gm3','rf-gm4','rf-gm5','rf-rk','rf-rm','rf-rm2','rf-overall','rf-overall2','rf-overall3','rf-overall4','rf-overall5','rf-overall6','gm7'].forEach(k=>localStorage.removeItem(k));}catch(e){}
 (()=>{const g=ls.get('rf-gm6'),r=ls.get('rf-rk2'),d=ls.get('rf-rd'),m=ls.get('rf-rm3');if(g&&g.d&&g.d.p&&g.d.c){GM=g.d;GMT=g.c;GMF=false;}if(r&&r.d&&r.d.g&&r.d.g.length){RK=r.d;RKT=r.c;RKF=false;}
 if(d&&d.d&&d.d.b&&d.d.b.length){RD=d.d;RDT=d.c;RDF=false;}if(m&&m.d&&Object.keys(m.d).length){RM=m.d;RMT=m.c;RMF=false;}})();
 init();
