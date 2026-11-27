@@ -164,10 +164,10 @@ function fm(l){return (l||[]).filter(k=>m[k]).map(k=>(el.includes(k)||lg.include
 return {t:String(gm.timestamp||''),m,p,c,d:ivList(gm.pokemon)};}
 function ivList(raw){const byId=new Map(raw.map(p=>[p.speciesId,p]));
 const RG=/\((Alolan|Galarian|Hisuian|Paldean)\)/,TAU=/^Tauros \((Aqua|Blaze|Combat)\)/,mb=id=>id.split(/_(?:mega|primal)(?:_|$)/)[0],ism=id=>{const ps=id.split('_');return ps.includes('mega')||ps.includes('primal');},
-par=p=>ism(p.speciesId)?mb(p.speciesId):(p.family||{}).parent,
+ev=new Map(),par=p=>ism(p.speciesId)?mb(p.speciesId):p.family?p.family.parent:ev.get(p.speciesId),
 reg=(id,k=0)=>{const p=byId.get(id),m=p.speciesName.match(RG);if(m)return m[1];if(TAU.test(p.speciesName))return 'Paldean';const pa=par(p);return pa&&byId.has(pa)&&k<5?reg(pa,k+1):'';},
-fkey=p=>{const q=ism(p.speciesId)&&byId.get(mb(p.speciesId))||p,fid=(q.family||{}).id;return fid?fid.replace(/_(ALOLAN?|GALARIAN|GALAR|HISUIAN|HISUI|PALDEAN|PALDEA)$/,''):'X_'+q.speciesId.split('_')[0];};
-let out=[];const seen=new Set();
+fkey=p=>{const q=ism(p.speciesId)&&byId.get(mb(p.speciesId))||p,fid=(q.family||byId.get(par(q))?.family||{}).id;return fid?fid.replace(/_(ALOLAN?|GALARIAN|GALAR|HISUIAN|HISUI|PALDEAN|PALDEA)$/,''):'X_'+q.speciesId.split('_')[0];};
+raw.forEach(p=>((p.family||{}).evolutions||[]).forEach(e=>{if(!ev.has(e))ev.set(e,p.speciesId);}));let out=[];const seen=new Set();
 raw.forEach(p=>{const n=p.speciesName,id=p.speciesId,b=p.baseStats;if(!b||seen.has(n)||id.endsWith('_shadow'))return;seen.add(n);const pa=byId.get(par(p));out.push([n,b.atk,b.def,b.hp,fkey(p),reg(id),pa?pa.speciesName:'']);});
 const base={};out.forEach(x=>{if(!x[0].includes('('))base[x[0]]=x.slice(1,4).join();});
 out=out.filter(x=>!(x[0].includes('(')&&!RG.test(x[0])&&!TAU.test(x[0])&&base[x[0].split(' (')[0]]===x.slice(1,4).join()));
