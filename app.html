@@ -35,9 +35,16 @@ input:focus,select:focus,button:focus-visible{outline:2px solid var(--accent);ou
 details>summary{cursor:pointer;font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
 details[open]>summary{margin-bottom:10px}
 .note>summary{text-transform:none;letter-spacing:0;font-size:inherit}
-#src,#rsrc{white-space:pre-line}
-#rb{grid-template-columns:repeat(2,minmax(0,1fr))}
-#rb .ty{white-space:normal}
+#src,#rsrc,#msrc{white-space:pre-line}
+#rb,#mb{grid-template-columns:repeat(2,minmax(0,1fr))}
+#rb .ty,#mb .ty{white-space:normal}
+tr.fade td{-webkit-mask-image:linear-gradient(#000,transparent 90%);mask-image:linear-gradient(#000,transparent 90%);border-bottom:0}
+tr.xp td{padding:0}
+.arw{display:block;width:100%;background:none;border:0;color:var(--muted);cursor:pointer;padding:2px 0 6px}
+.arw:hover{color:var(--accent)}
+.arw[aria-expanded="false"]{position:relative;margin-top:-18px}
+.arw svg{display:block;width:22px;height:22px;margin:0 auto;transition:transform .2s}
+.arw[aria-expanded="true"] svg{transform:rotate(180deg)}
 #lineup{display:grid;gap:10px}
 .slot{display:grid;grid-template-columns:52px 1fr;gap:8px;align-items:start}
 .slot .lbl{margin:8px 0 0}
@@ -75,7 +82,7 @@ tr.grp.cut td{border-top:2px dashed var(--line)}
 .note a{color:var(--accent)}
 .err{color:var(--muted);margin:0}
 .view{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;min-width:0}
-.tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:4px}
+.tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:4px}
 .tab{font:inherit;font-weight:500;padding:10px;border:0;border-radius:7px;background:none;color:var(--muted);cursor:pointer}
 .tab[aria-selected="true"]{background:var(--accent);color:var(--surface)}
 .ivs{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
@@ -89,7 +96,7 @@ tr.grp.cut td{border-top:2px dashed var(--line)}
 </head>
 <body>
 <main>
-<div class="tabs" role="tablist"><button type="button" class="tab" role="tab" id="t-iv" aria-controls="iv" aria-selected="true">IV</button><button type="button" class="tab" role="tab" id="t-rocket" aria-controls="rocket" aria-selected="false">Rocket</button><button type="button" class="tab" role="tab" id="t-raid" aria-controls="raid" aria-selected="false">Raid</button></div>
+<div class="tabs" role="tablist"><button type="button" class="tab" role="tab" id="t-iv" aria-controls="iv" aria-selected="true">IV</button><button type="button" class="tab" role="tab" id="t-rocket" aria-controls="rocket" aria-selected="false">Rocket</button><button type="button" class="tab" role="tab" id="t-raid" aria-controls="raid" aria-selected="false">Raid</button><button type="button" class="tab" role="tab" id="t-max" aria-controls="max" aria-selected="false">Max</button></div>
 <div class="view" id="iv" role="tabpanel" aria-labelledby="t-iv">
 <form class="card" id="ivf" style="position:relative" autocomplete="off">
 <div><label for="sp">Pokémon</label><div class="ac"><input id="sp" value="Cradily" role="combobox" aria-autocomplete="list" aria-controls="sug" aria-expanded="false" autocapitalize="words" spellcheck="false" enterkeyhint="go"><ul id="sug" role="listbox" hidden></ul></div></div>
@@ -122,6 +129,14 @@ tr.grp.cut td{border-top:2px dashed var(--line)}
 </section>
 <details class="note"><summary>Calculation details</summary>Score relative to #1 of its group, based on your damage per second with six copies of the same level 50 hundo, averaged over the boss's possible movesets. Megas and primals are ranked separately and only the top 5 are shown, since you can bring only one per raid; the rest of the list fills your other five slots. 4★, mega and stronger bosses assume an average remote lobby of 5, 7 or 10 players, where the others bring the 10th best non-mega counter at level 40 and everyone has a Good Friend bonus (3%), so the fastest raid is the one where you deal the most damage before the boss falls. Weaker bosses assume you raid alone. Includes every boss and attacker hit, damage taken, energy from damage, fainting, switching (1 s) and rejoining after six faints (15 s), with the boss attacking every 2 s plus move duration. Megas include their own mega boost; it doesn't apply to your other attackers. All time gives 5 points for 1st, 4 for 2nd, 3 for 3rd–4th, 2 for 5th–8th and 1 for 9th–16th place within each group against every released legendary, mythical and mega as a raid boss. Current does the same for the current 5★ and mega bosses. * Elite or legacy move. Boss HP and stat multipliers: Pokebattler.</details>
 <p class="note"><span id="rsrc"></span></p>
+</div>
+<div class="view" id="max" role="tabpanel" aria-labelledby="t-max" hidden>
+<div class="card"><div class="types" id="mb" role="group" aria-label="Max boss"></div></div>
+<section class="card">
+<div id="mout" aria-live="polite"></div>
+</section>
+<details class="note"><summary>Calculation details</summary>Score relative to #1 of its group, for level 50 hundos with Max Moves at level 3. Attackers: damage of one Max Attack (power 350; G-Max moves and Dynamax Cannon 450). A Dynamax Pokémon's Max Attack has the type of its fast move, so the best fast move for this boss is shown. Tanks: Max Meter charge they build before fainting. Each hit adds 1 charge per 0.5% of the boss's HP it deals (times the boss's meter multiplier), at least 1, so fast hits count most; the best fast move or fast and charged combination is used. Healers: Max Spirit heals every ally by 16% of the healer's max HP, scaled down if the healer survives fewer boss attacks than most. Survival is against the boss's average regular charged move. Dodging, Max Guard and damage bonuses help everyone equally and are left out. Pre-evolutions are hidden when their evolution can also Dynamax. All time gives 5 points for 1st, 4 for 2nd, 3 for 3rd–4th, 2 for 5th–8th and 1 for 9th–16th place within each group against every 5★ and 6★ Max boss so far. * Elite or legacy move. Boss HP, CPM and meter multiplier: Pokebattler.</details>
+<p class="note"><span id="msrc"></span></p>
 </div>
 </main>
 <script>
@@ -165,13 +180,27 @@ function raidMoveKey(templateId,id){const mega=templateId.match(/^VM_MOVE_TEMP_E
 function compactRaidMoves(gm){const m={};gm.forEach(e=>{const s=e.data&&e.data.moveSettings,k=s&&raidMoveKey(e.templateId,String(s.movementId));if(!k)return;
 m[k]=[String(s.pokemonType).replace('POKEMON_TYPE_','').toLowerCase(),s.power||0,s.durationMs,s.energyDelta||0,s.damageWindowStartMs||0];if(k[0]==='+')m[k].push(s.vfxName||'');});
 gm.forEach(e=>{const b=e.data&&e.data.nonCombatMoveSettings&&(e.data.nonCombatMoveSettings.bonusEffect||{}).megaMoveBonus,k=b&&b.attackMultiplier&&raidMoveKey('VM_MOVE_'+b.specialMove,b.specialMove);if(m[k])m[k][1]*=b.attackMultiplier;});return m;}
+// Max Battles from the game master: d = who can Dynamax ("SPECIES|FORM"), g = Gigantamax [species,form,type,move], s = special max moves (Zacian, Zamazenta, Eternatus), t = Max Attack per type
+function compactMaxMoves(gm){const by={};gm.forEach(e=>{if(e.data)by[e.templateId]=e.data;});
+const mv=id=>{const s=(by[id]||{}).moveSettings;return s&&[String(s.pokemonType).replace('POKEMON_TYPE_','').toLowerCase(),s.vfxName||''];};
+const d=new Set();gm.forEach(e=>{const x=e.data&&e.data.pokemonExtendedSettings;if(x&&(x.breadOverrides||[]).some(o=>o.breadMode==='BREAD_MODE'))d.add(x.uniqueId+'|'+(x.form||''));});
+const gmax=new Set((((by.BREAD_SHARED_SETTINGS||{}).breadSettings||{}).allowedSourdoughPokemon||[]).filter(a=>/DOUGH/.test(a.breadMode)).map(a=>a.pokemonId));
+const g=[],s=[],seen=new Set();(((by.SOURDOUGH_MOVE_MAPPING_SETTINGS||{}).sourdoughMoveMappingSettings||{}).mappings||[]).forEach(m=>{const k=m.pokemonId+'|'+(m.form||''),v=mv(m.move);if(seen.has(k)||!v)return;seen.add(k);(gmax.has(m.pokemonId)?g:s).push([m.pokemonId,m.form||'',...v]);});
+const t={};(((by.BREAD_MOVE_MAPPING_SETTINGS||{}).breadMoveMappings||{}).mappings||[]).forEach(m=>{const v=mv(m.move);if(v)t[v[0]]=v[1];});
+return {d:[...d],g,s,t};}
+// Pokebattler raids: Max bosses [id, tier, 0 current / 1 past / 2 upcoming, hp, cpm, meter multiplier, meter decimals, verified], tier defaults, Dynamax list
+function compactMax(r){const b=[],t={};(r.tiers||[]).forEach(x=>{const m=String(x.tier).match(/^RAID_LEVEL_(\d(?:_\d)?)_MAX(?:_(LEGACY|FUTURE))?$/);if(!m)return;const st=m[2]==='LEGACY'?1:m[2]==='FUTURE'?2:0,i=x.info||{};if(i.hp)t[m[1]]=[i.hp,i.cpm];
+(x.raids||[]).forEach(y=>{const s=y.bossStats||i;if(y.pokemon&&s.hp)b.push([y.pokemon,m[1],st,s.hp,s.cpm,s.maxEnergyMultiplier||1,s.maxEnergyDecimals||0,s.source==='MAX_BOSS_STATS'?1:0]);});});
+return {b,t,dm:r.dynamaxPokemon||[]};}
 //</transform>
 let GM=/*GM*/null/*/GM*/;
 let RK=/*RK*/null/*/RK*/;
 let RD=/*RD*/null/*/RD*/;
 let RM=/*RM*/null/*/RM*/;
 let RO=/*RO*/null/*/RO*/;
-let GMT=/*GMT*/''/*/GMT*/,RKT=/*RKT*/''/*/RKT*/,RDT=/*RDT*/''/*/RDT*/,RMT=/*RMT*/''/*/RMT*/,GMF=true,RKF=true,RDF=true,RMF=true;
+let MX=/*MX*/null/*/MX*/;
+let MB=/*MB*/null/*/MB*/;
+let GMT=/*GMT*/''/*/GMT*/,RKT=/*RKT*/''/*/RKT*/,RDT=/*RDT*/''/*/RDT*/,RMT=/*RMT*/''/*/RMT*/,MBT=/*MBT*/''/*/MBT*/,GMF=true,RKF=true,RDF=true,RMF=true,MBF=true;
 
 const $=id=>document.getElementById(id);
 const ls={get(k){try{return JSON.parse(localStorage.getItem(k)||'null');}catch(e){return null;}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}};
@@ -393,16 +422,111 @@ $('rb').addEventListener('click',e=>{const b=e.target.closest('[data-n]');if(!b)
 $('rout').addEventListener('click',e=>{const tr=e.target.closest('tr.row');if(!tr)return;ROPEN=ROPEN===tr.dataset.r?null:tr.dataset.r;drawRaid();});
 document.querySelector('.tabs').addEventListener('click',()=>{if(RDIRTY)runRaid();});
 
-function init(){$('tl').value=S.tl;fillGrunts();setSrc();shareGM();run();fillBosses();setRaidSrc();runRaid();}
+// Max Battles: attackers (one Max Attack), tanks (Max Meter charge before fainting), healers (Max Spirit)
+const MAX_POWER=350,GMAX_POWER=450,SPIRIT=0.16,MAX_SHORT=4,MAX_LONG=20;const MEXP=new Set();
+const MAX_ALL={key:'all',label:'All time (5★ & 6★)',types:[],overall:true};
+const MAX_GROUPS=['Attackers · Max Attack','Tanks · fill the Max Meter','Healers · Max Spirit'];
+const MAX_WORDS={goldrush:'Gold Rush',voltcrash:'Volt Crash',chistrike:'Chi Strike',foamburst:'Foam Burst',windrage:'Wind Rage',vinelash:'Vine Lash',drumsolo:'Drum Solo',oneblow:'One Blow',rapidflow:'Rapid Flow',stunshock:'Stun Shock'};
+function maxMoveName(vfx){const p=String(vfx).split('_'),w=p.slice(1).map(x=>MAX_WORDS[x]||x[0].toUpperCase()+x.slice(1)).join(' ');
+if(p[0]==='gmax')return 'G-Max '+w;if(/^(behemoth|dynamax)/.test(p[1]||''))return w;return 'Max '+w;}
+const maxStars=st=>parseFloat(String(st).replace('_','.'));
+// who can join: Dynamax (game master), Gigantamax that have been out (Pokebattler), Zacian, Zamazenta and Eternatus with their own Max Move
+let MXC=null,MXK=[];
+function maxPool(){if(MXK[0]===GM&&MXK[1]===MX&&MXK[2]===MB)return MXC;MXK=[GM,MX,MB];
+const byId=new Map(GM.p.map(x=>[x[0],x])),formId=f=>f.toLowerCase().replace(/_normal$/,'').replace(/_alola$/,'_alolan');
+const find=(sp,form)=>{const x=form&&byId.get(formId(form))||byId.get(sp.toLowerCase());return x&&!(x[7]&8)?x:null;};
+const list=[],seen=new Set(),add=(x,kind,mv)=>{const k=x[0]+kind;if(seen.has(k))return;seen.add(k);list.push({x,kind,mv,types:x[5].split('/')});};
+// a species listed with exact forms (Alolan, Amped…) skips its form-less and costume entries
+const entries=MX.d.map(s=>{const [sp,form]=s.split('|');return {sp,x:find(sp,form),exact:!!form&&byId.has(formId(form))};}).filter(e=>e.x);
+const exactSp=new Set(entries.filter(e=>e.exact).map(e=>e.sp));
+entries.forEach(e=>{if(e.exact||!exactSp.has(e.sp))add(e.x,'d');});
+// leave out pre-evolutions whose evolution can also Dynamax
+const par=new Map(GM.d.map(e=>[e[0],e[6]])),parents=new Set(list.map(c=>par.get(c.x[1])).filter(Boolean));
+for(let i=list.length-1;i>=0;i--)if(parents.has(list[i].x[1]))list.splice(i,1);
+const pb=id=>id.toLowerCase().replace(/_form$/,'').replace(/_gigantamax$/,''),out=new Set();
+MB.b.forEach(b=>{if(/^6/.test(b[1])&&/_GIGANTAMAX$/.test(b[0])&&(b[2]<2||b[7]))out.add(pb(b[0]));});MB.dm.forEach(id=>{if(/_GIGANTAMAX$/.test(id))out.add(pb(id));});
+MX.g.forEach(([sp,form,type,vfx])=>{const x=find(sp,form);if(x&&(out.has(x[0])||out.has(sp.toLowerCase())||form&&out.has(formId(form))))add(x,'g',[type,GMAX_POWER,maxMoveName(vfx)]);});
+MX.s.forEach(([sp,form,type,vfx])=>{const x=find(sp,form);if(x)add(x,'s',[type,/dynamax_cannon/.test(vfx)?GMAX_POWER:MAX_POWER,maxMoveName(vfx)]);});
+MXC={list,byId};return MXC;}
+function resolveMaxBoss(id){const byId=maxPool().byId;let s=id.toLowerCase().replace(/_gigantamax$/,'').replace(/_form$/,'');
+while(s){const x=byId.get(s);if(x)return x;const i=s.lastIndexOf('_');if(i<0)return;s=s.slice(0,i);}}
+function maxBoss(id,stars,hp,bossCpm,M,d){const x=resolveMaxBoss(id);if(!x)return;const g=/_GIGANTAMAX$/.test(id);
+const moves=(GM.c[x[0]]||[]).filter(k=>k[0]!=='*').map(raidMove).filter(c=>c&&c[3]<0);if(!moves.length)return;
+return {key:x[0]+(g?'_g':''),label:(g?'G-Max ':'')+x[1],stars,x,types:x[5].split('/'),hp,M,d,atk:(x[2]+15)*bossCpm,def:(x[3]+15)*bossCpm,moves};}
+let MBL=null,MBK=[];
+function maxBosses(){if(MBK[0]===MB&&MBK[1]===GM&&MBK[2]===RM&&MBK[3]===MX)return MBL;MBK=[MB,GM,RM,MX];const seen=new Set(),bosses=[];
+MB.b.forEach(b=>{if(b[2]||maxStars(b[1])<3)return;const boss=maxBoss(b[0],b[1],b[3],b[4],b[5],b[6]);if(boss&&!seen.has(boss.key)){seen.add(boss.key);bosses.push(boss);}});
+MBL=[MAX_ALL,...bosses.sort((a,b)=>maxStars(b.stars)-maxStars(a.stars)||a.label.localeCompare(b.label))];return MBL;}
+// every 5★ and 6★ Max boss so far, plus legendary Dynamax Pokémon Pokebattler hasn't listed yet (tier defaults)
+function allTimeMaxBosses(){const seen=new Set(),bosses=[],big=MB.b.filter(b=>maxStars(b[1])>=5&&(b[2]<2||b[7])).sort((a,b)=>b[7]-a[7]||a[2]-b[2]);
+big.forEach(b=>{const boss=maxBoss(b[0],b[1],b[3],b[4],b[5],b[6]);if(boss&&!seen.has(boss.key)){seen.add(boss.key);bosses.push(boss);}});
+const t=MB.t['5']||[15000,0.75],ref=big.find(b=>b[1]==='5'&&b[7])||[0,0,0,0,0,1,0],par=new Map(GM.d.map(e=>[e[0],e[6]]));
+// evolved legendaries (Melmetal, Urshifu) are never Max bosses
+maxPool().list.forEach(c=>{if(c.kind!=='d'||!(c.x[7]&4)||par.get(c.x[1])||seen.has(c.x[0]))return;const boss=maxBoss(c.x[0].toUpperCase(),'5',t[0],t[1],ref[5],ref[6]);if(boss){seen.add(boss.key);bosses.push(boss);}});
+return bosses;}
+function rankMax(b){const cp=cpm(50),att=[],tanks=new Map();
+const meter=dmg=>Math.max(1,Math.floor(dmg/b.hp*200*b.M*10**b.d)/10**b.d);
+for(const c of maxPool().list){const {x,types,kind}=c,A=(x[2]+15)*cp,D=(x[3]+15)*cp,maxHp=Math.floor((x[4]+15)*cp);let best=null,tank=null;
+const fasts=x[6].map(fk=>[fk,raidMove(fk.replace('*',''))]).filter(([,F])=>F&&F[3]>0);
+if(c.mv)best={dmg:hitDamage(c.mv,A,b.def,types,b.types,1),mt:c.mv[0],mn:c.mv[2]};
+else for(const [fk,F] of fasts){const dmg=hitDamage([F[0],MAX_POWER],A,b.def,types,b.types,1);if(!best||dmg>best.dmg||dmg===best.dmg&&F[2]<best.F[2])best={dmg,mt:F[0],mn:maxMoveName(MX.t[F[0]]||'max_'+F[0]),fk,F};}
+if(best)att.push({role:0,x,kind,dmg:best.dmg,mt:best.mt,mn:best.mn,fk:best.fk,score:best.dmg});
+const inc=b.moves.reduce((s,m)=>s+hitDamage(m,b.atk,D,b.types,types,1),0)/b.moves.length,hits=maxHp/inc;
+for(const [fk,F] of fasts){const fm=meter(hitDamage(F,A,b.def,types,b.types,1)),opts=[[fm*1000/F[2],null]];
+for(const ck of GM.c[x[0]]||[]){const C=raidMove(ck.replace('*',''));if(!C||C[3]>=0)continue;const n=Math.ceil(-C[3]/F[3]);opts.push([(n*fm+meter(hitDamage(C,A,b.def,types,b.types,1)))*1000/(n*F[2]+C[2]),ck]);}
+for(const [rate,ck] of opts)if(!tank||rate>tank.rate)tank={rate,fk,ck};}
+// tanks and healers: one row per Pokémon, Dynamax preferred over Gigantamax
+const prev=tanks.get(x[0]);if(tank&&(!prev||prev.kind==='g'&&kind!=='g'))tanks.set(x[0],{role:1,x,kind,...tank,hits,maxHp,score:tank.rate*hits});}
+const ts=[...tanks.values()],med=ts.map(r=>r.hits).sort((a,b)=>a-b)[ts.length>>1]||1;
+const heal=ts.map(r=>({role:2,x:r.x,kind:r.kind,hits:r.hits,heal:Math.floor(SPIRIT*r.maxHp),score:Math.floor(SPIRIT*r.maxHp)*Math.min(1,r.hits/med)}));
+const ranked=l=>{l.sort((a,c)=>c.score-a.score);l.forEach((r,i)=>{r.rk=i+1;r.pct=r.score/l[0].score*100;});return l;};
+return [...ranked(att),...ranked(ts),...ranked(heal)];}
+let MAO=null,MAK=[];
+function maxOverall(){if(MAK[0]===MB&&MAK[1]===GM&&MAK[2]===RM&&MAK[3]===MX)return MAO;MAK=[MB,GM,RM,MX];const totals=new Map();
+allTimeMaxBosses().forEach(b=>rankMax(b).filter(r=>r.rk<=OVERALL_TOP).forEach(r=>{const k=r.role+'|'+r.x[0]+'|'+r.kind,e=totals.get(k)||{role:r.role,x:r.x,kind:r.kind,points:0,best:[]};
+e.points+=placePoints(r.rk);e.best.push([b.label,r.rk,r]);totals.set(k,e);}));
+const rows=[0,1,2].flatMap(role=>{const l=[...totals.values()].filter(e=>e.role===role).sort((a,b)=>b.points-a.points);
+l.forEach((e,i)=>{e.best.sort((a,b)=>a[1]-b[1]);Object.assign(e,{mt:e.best[0][2].mt,mn:e.best[0][2].mn,fk:e.best[0][2].fk,ck:e.best[0][2].ck,rk:i+1,pct:e.points/l[0].points*100});});return l;});
+MAO=rows;return rows;}
+let MROWS=[],MOPEN=null,MSEL=ls.get('rf-max')||MAX_ALL.key,MDIRTY=true;const MCACHE=new Map();
+function fillMaxBosses(){const bs=maxBosses();if(!bs.some(b=>b.key===MSEL))MSEL=MAX_ALL.key;
+$('mb').innerHTML=bs.map(b=>{return '<button type="button" class="ty" data-n="'+esc(b.key)+'" aria-pressed="'+(b.key===MSEL)+'" style="'+bossStyle(b)+'">'+esc(b.label)+'</button>';}).join('');}
+function runMax(){if($('max').hidden){MDIRTY=true;return;}MDIRTY=false;const boss=maxBosses().find(b=>b.key===MSEL);
+if(!boss||boss.overall)MROWS=maxOverall();else{if(!MCACHE.has(boss))MCACHE.set(boss,rankMax(boss));MROWS=MCACHE.get(boss);}drawMax();}
+function maxName(r){return (r.kind==='g'?'G-Max ':'')+esc(r.x[1]).replace(/\([^)]*\)/,f=>f.replace(/ /g,'&nbsp;'));}
+function maxMoves(r){const line=k=>'<span class="mv">'+dots([moveType(k)])+moveName(k)+'</span>';
+if(r.role===2)return '';if(r.role===1)return line(r.fk)+(r.ck?'<br>'+line(r.ck):'');
+return '<span class="mv">'+dots([r.mt])+esc(r.mn)+'</span>'+(r.fk?'<br>'+line(r.fk):'');}
+function maxDetail(r){if(r.best)return '<tr><td class="sub">Points</td><td class="n">'+r.points+'</td></tr>'+r.best.slice(0,5).map(([b,rk])=>'<tr><td class="sub">#'+rk+'</td><td>'+esc(b)+'</td></tr>').join('');
+const survive='<tr><td class="sub">Boss attacks survived</td><td class="n">'+r.hits.toFixed(1)+'</td></tr>';
+if(r.role===0)return '<tr><td class="sub">Max Attack</td><td class="n">'+r.dmg+' dmg</td></tr><tr><td class="sub">Max phase (3 uses)</td><td class="n">'+3*r.dmg+' dmg</td></tr>';
+if(r.role===1)return '<tr><td class="sub">Meter charge / s</td><td class="n">'+r.rate.toFixed(2)+'</td></tr>'+survive+'<tr><td class="sub">Charge before fainting</td><td class="n">'+r.score.toFixed(0)+'</td></tr>';
+return '<tr><td class="sub">Heals each ally</td><td class="n">'+r.heal+' HP</td></tr>'+survive;}
+function maxRowHtml(r,fade){const k=r.role+'|'+r.x[0]+'|'+r.kind,o=!fade&&MOPEN===k;
+let h='<tr class="row'+(r.rk===1?' top':'')+(fade?' fade" data-g="'+r.role+'" aria-hidden="true':'" data-r="'+esc(k)+'" aria-expanded="'+o)+'"><td class="r">'+r.rk+'</td><td><span class="pk">'+maxName(r)+'</span></td><td>'+maxMoves(r)+'</td><td class="n"'+(r.best?' title="'+r.points+' points"':'')+'>'+Math.round(r.pct)+'</td></tr>';
+if(o)h+='<tr class="det"><td></td><td colspan="3"><table>'+maxDetail(r)+'</table></td></tr>';
+return h;}
+function drawMax(){const o=$('mout');if(!MROWS.length){o.innerHTML='<p class="err">No Max Battle Pokémon found.</p>';return;}
+o.innerHTML='<div class="tw"><table><thead><tr><th>#</th><th>Pokémon</th><th>Moves</th><th class="n" title="Score relative to #1 of its group">Score %</th></tr></thead><tbody>'
++MAX_GROUPS.map((t,role)=>{const all=MROWS.filter(r=>r.role===role).slice(0,MAX_LONG),open=MEXP.has(role),more=all.length>MAX_SHORT,rows=open?all:all.slice(0,MAX_SHORT);if(!rows.length)return '';
+return '<tr class="grp'+(role?' cut':'')+'"><td colspan="4">'+t+'</td></tr>'+rows.map(r=>maxRowHtml(r)).join('')
++(more&&!open?maxRowHtml(all[MAX_SHORT],true):'')
++(more?'<tr class="xp"><td colspan="4"><button type="button" class="arw" data-g="'+role+'" aria-expanded="'+open+'" aria-label="'+(open?'Show less':'Show more')+'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button></td></tr>':'');}).join('')+'</tbody></table></div>';}
+function setMaxSrc(){$('msrc').textContent=srcLine('Bosses: Pokebattler',MBT,MBF)+'\n'+srcLine('Max Pokémon & moves: game master (alexelgt)',RMT,RMF)+'\n'+srcLine('Stats: PvPoke',GMT,GMF);}
+$('mb').addEventListener('click',e=>{const b=e.target.closest('[data-n]');if(!b)return;MSEL=b.dataset.n;ls.set('rf-max',MSEL);MOPEN=null;$('mb').querySelectorAll('[data-n]').forEach(x=>x.setAttribute('aria-pressed',x===b));runMax();});
+$('mout').addEventListener('click',e=>{const g=e.target.closest('[data-g]');if(g){const role=+g.dataset.g;if(MEXP.has(role))MEXP.delete(role);else MEXP.add(role);drawMax();return;}const tr=e.target.closest('tr.row');if(!tr)return;MOPEN=MOPEN===tr.dataset.r?null:tr.dataset.r;drawMax();});
+document.querySelector('.tabs').addEventListener('click',()=>{if(MDIRTY)runMax();});
+
+function init(){$('tl').value=S.tl;fillGrunts();setSrc();shareGM();run();fillBosses();setRaidSrc();runRaid();fillMaxBosses();setMaxSrc();runMax();}
 function shareGM(){dispatchEvent(new CustomEvent('gamemaster',{detail:{d:GM.d,date:GMT,fallback:GMF}}));}
 // cached live data from earlier visits (drop caches from older versions)
-try{['rf-gm','rf-gm2','rf-gm3','rf-gm4','rf-gm5','rf-rk','rf-rm','rf-rm2','rf-overall','rf-overall2','rf-overall3','rf-overall4','rf-overall5','rf-overall6','rf-overall7','rf-overall8','rf-overall9','gm7'].forEach(k=>localStorage.removeItem(k));}catch(e){}
-(()=>{const g=ls.get('rf-gm6'),r=ls.get('rf-rk2'),d=ls.get('rf-rd'),m=ls.get('rf-rm3');if(g&&g.d&&g.d.p&&g.d.c){GM=g.d;GMT=g.c;GMF=false;}if(r&&r.d&&r.d.g&&r.d.g.length){RK=r.d;RKT=r.c;RKF=false;}
-if(d&&d.d&&d.d.b&&d.d.b.length){RD=d.d;RDT=d.c;RDF=false;}if(m&&m.d&&Object.keys(m.d).length){RM=m.d;RMT=m.c;RMF=false;}})();
+try{['rf-gm','rf-gm2','rf-gm3','rf-gm4','rf-gm5','rf-rk','rf-rm','rf-rm2','rf-rm3','rf-overall','rf-overall2','rf-overall3','rf-overall4','rf-overall5','rf-overall6','rf-overall7','rf-overall8','rf-overall9','gm7'].forEach(k=>localStorage.removeItem(k));}catch(e){}
+(()=>{const g=ls.get('rf-gm6'),r=ls.get('rf-rk2'),d=ls.get('rf-rd'),m=ls.get('rf-rm4'),x=ls.get('rf-mb');if(g&&g.d&&g.d.p&&g.d.c){GM=g.d;GMT=g.c;GMF=false;}if(r&&r.d&&r.d.g&&r.d.g.length){RK=r.d;RKT=r.c;RKF=false;}
+if(d&&d.d&&d.d.b&&d.d.b.length){RD=d.d;RDT=d.c;RDF=false;}if(m&&m.d&&Object.keys(m.d).length&&m.x&&m.x.d){RM=m.d;MX=m.x;RMT=m.c;RMF=false;}if(x&&x.d&&x.d.b&&x.d.b.length){MB=x.d;MBT=x.c;MBF=false;}})();
 init();
 
 // refresh live data (at most every 3 h)
-(async()=>{const now=Date.now(),g=ls.get('rf-gm6')||{},r=ls.get('rf-rk2')||{},raids=ls.get('rf-rd')||{},raidMoves=ls.get('rf-rm3')||{};let ch=false;
+(async()=>{const now=Date.now(),g=ls.get('rf-gm6')||{},r=ls.get('rf-rk2')||{},raids=ls.get('rf-rd')||{},raidMoves=ls.get('rf-rm4')||{},maxBattles=ls.get('rf-mb')||{};let ch=false;
 if(now-(r.t||0)>108e5){try{const res=await fetch('https://raw.githubusercontent.com/bigfoott/ScrapedDuck/data/rocketLineups.json',{cache:'no-cache'});if(res.ok){const d=compactRocket(await res.json());if(d.g.length){let c=new Date().toISOString();
 try{const a=await fetch('https://api.github.com/repos/bigfoott/ScrapedDuck/commits?sha=data&path=rocketLineups.json&per_page=1');if(a.ok){const j=await a.json();c=j[0].commit.committer.date;}}catch(e){}
 RK=d;RKT=c;RKF=false;ls.set('rf-rk2',{d,c,t:now});ch=true;}}}catch(e){}}
@@ -411,9 +535,10 @@ if(now-(raids.t||0)>108e5){try{const res=await fetch('https://raw.githubusercont
 try{const a=await fetch('https://api.github.com/repos/bigfoott/ScrapedDuck/commits?sha=data&path=raids.json&per_page=1');if(a.ok){const j=await a.json();c=j[0].commit.committer.date;}}catch(e){}
 RD=d;RDT=c;RDF=false;ls.set('rf-rd',{d,c,t:now});ch=true;}}}catch(e){}}
 if(now-(raidMoves.t||0)>108e5){try{const ts=await fetch('https://raw.githubusercontent.com/alexelgt/game_masters/master/timestamp.json',{cache:'no-cache'});if(ts.ok){const u=(await ts.json()).uploadTime;
-if(u&&u===raidMoves.u)ls.set('rf-rm3',Object.assign({},raidMoves,{t:now}));
-else{const res=await fetch('https://raw.githubusercontent.com/alexelgt/game_masters/master/GAME_MASTER.json',{cache:'no-cache'});if(res.ok){const d=compactRaidMoves(await res.json());if(Object.keys(d).length>200){const c=new Date(+u||now).toISOString();RM=d;RMT=c;RMF=false;ls.set('rf-rm3',{d,c,t:now,u});ch=true;}}}}}catch(e){}}
-if(ch){fillGrunts();setSrc();run();RCACHE.clear();fillBosses();setRaidSrc();runRaid();}})();
+if(u&&u===raidMoves.u)ls.set('rf-rm4',Object.assign({},raidMoves,{t:now}));
+else{const res=await fetch('https://raw.githubusercontent.com/alexelgt/game_masters/master/GAME_MASTER.json',{cache:'no-cache'});if(res.ok){const raw=await res.json(),d=compactRaidMoves(raw),x=compactMaxMoves(raw);if(Object.keys(d).length>200&&x.d.length){const c=new Date(+u||now).toISOString();RM=d;MX=x;RMT=c;RMF=false;ls.set('rf-rm4',{d,x,c,t:now,u});ch=true;}}}}}catch(e){}}
+if(now-(maxBattles.t||0)>108e5){try{const res=await fetch('https://fight.pokebattler.com/raids',{cache:'no-cache'});if(res.ok){const d=compactMax(await res.json());if(d.b.length){const c=new Date().toISOString();MB=d;MBT=c;MBF=false;ls.set('rf-mb',{d,c,t:now});ch=true;}}}catch(e){}}
+if(ch){fillGrunts();setSrc();run();RCACHE.clear();fillBosses();setRaidSrc();runRaid();MCACHE.clear();fillMaxBosses();setMaxSrc();runMax();}})();
 try{if('serviceWorker' in navigator&&!/claude/.test(location.hostname))navigator.serviceWorker.register('sw.js').catch(()=>{});}catch(e){}
 })();
 </script>
