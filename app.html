@@ -120,7 +120,7 @@ tr.grp.cut td{border-top:2px dashed var(--line)}
 <section class="card">
 <div id="rout" aria-live="polite"></div>
 </section>
-<details class="note"><summary>Calculation details</summary>Score relative to #1 of its group, based on your damage per second with six copies of the same level 50 hundo, averaged over the boss's possible movesets. Megas and primals are ranked separately and only the top 5 are shown, since you can bring only one per raid; the rest of the list fills your other five slots. 4★, mega and stronger bosses assume an average remote lobby of 5, 7 or 10 players, where the others bring the 10th best non-mega counter at level 40 and everyone has a Good Friend bonus (3%), so the fastest raid is the one where you deal the most damage before the boss falls. Weaker bosses assume you raid alone. Includes every boss and attacker hit, damage taken, energy from damage, fainting, switching (1 s) and rejoining after six faints (15 s), with the boss attacking every 2 s plus move duration. Megas include their own mega boost and max mega level (mega moves at 130% power, as on Pokebattler); the boost doesn't apply to your other attackers. All time gives 5 points for 1st, 4 for 2nd, 3 for 3rd–4th, 2 for 5th–8th and 1 for 9th–16th place within each group against every released legendary, mythical and mega as a raid boss. Current does the same for the current 5★ and mega bosses. * Elite or legacy move. Boss HP and stat multipliers: Pokebattler.</details>
+<details class="note"><summary>Calculation details</summary>Score relative to #1 of its group, based on your damage per second with six copies of the same level 50 hundo, averaged over the boss's possible movesets. Megas and primals are ranked separately and only the top 5 are shown, since you can bring only one per raid; the rest of the list fills your other five slots. 4★, mega and stronger bosses assume an average remote lobby of 5, 7 or 10 players, where the others bring the 10th best non-mega counter at level 40 and everyone has a Good Friend bonus (3%), so the fastest raid is the one where you deal the most damage before the boss falls. Weaker bosses assume you raid alone. Includes every boss and attacker hit, damage taken, energy from damage, fainting, switching (1 s) and rejoining after six faints (15 s), with the boss attacking every 2 s plus move duration. Megas include their own mega boost; it doesn't apply to your other attackers. All time gives 5 points for 1st, 4 for 2nd, 3 for 3rd–4th, 2 for 5th–8th and 1 for 9th–16th place within each group against every released legendary, mythical and mega as a raid boss. Current does the same for the current 5★ and mega bosses. * Elite or legacy move. Boss HP and stat multipliers: Pokebattler.</details>
 <p class="note"><span id="rsrc"></span></p>
 </div>
 </main>
@@ -260,7 +260,7 @@ $('out').addEventListener('click',e=>{const tr=e.target.closest('tr.row');if(!tr
 
 //<raid>
 const RAID_TIERS={'1':[600,0.5974],'2':[1800,0.67],'3':[3600,0.73],'4':[9000,1],'5':[15000,0.79],'6':[22500,0.79],shadow1:[600,0.5974],shadow3:[4000,0.76],shadow5:[15000,0.82],mega:[9000,0.79],legendaryMega:[22500,0.79],superMega:[25000,0.79],ultraBeast:[15000,0.79]};
-const BOSS_DELAY=2000,SWAP=1000,RELOBBY=15000,OVERALL_TOP=16,MAX_MEGA_MOVE_POWER=1.3,SIM_MOVESETS=5;
+const BOSS_DELAY=2000,SWAP=1000,RELOBBY=15000,OVERALL_TOP=16,SIM_MOVESETS=5;
 // Average remote lobby for 4★ and up: you are maxed, the others bring the ~10th best non-mega counter at level 40 (Good Friend bonus for all)
 const LOBBY=[5,7,10],OTHER_RANK=10,OTHER_LEVEL=40,FRIEND=1.03;
 // Megas (incl. primals) are ranked on their own: only one per team, and it doesn't boost your own other attackers
@@ -274,8 +274,7 @@ if(t.startsWith('mega'))return x[7]&4?RAID_TIERS.legendaryMega:RAID_TIERS.mega;
 if(t.startsWith('primal'))return RAID_TIERS.legendaryMega;
 if(t.includes('ultra'))return RAID_TIERS.ultraBeast;}
 let RMI=null,RMD=null;
-function atMaxLevel(k,v){if(k[0]!=='+')return v;return [v[0],v[1]*MAX_MEGA_MOVE_POWER,...v.slice(2)];}
-function raidMove(id){if(RMD!==RM){RMD=RM;RMI=new Map(Object.entries(RM).map(([k,v])=>[k.replace(/_/g,''),atMaxLevel(k,v)]));}
+function raidMove(id){if(RMD!==RM){RMD=RM;RMI=new Map(Object.entries(RM).map(([k,v])=>[k.replace(/_/g,''),v]));}
 const m=RMI.get(id.replace('TECHNO_BLAST_DOUSE','TECHNO_BLAST_WATER').replace(/_/g,''));if(m)return m;const hidden=id.match(/^HIDDEN_POWER_([A-Z]+)$/),base=hidden&&RMI.get('HIDDENPOWER');if(base)return [hidden[1].toLowerCase(),...base.slice(1)];}
 function resolveBoss(n){const s=n.replace(/^Shadow /i,''),m=s.match(/^(Mega|Primal) (.+?)(?: ([XYZ]))?$/i);
 if(m){const want=norm(m[2]+' ('+m[1]+(m[3]?' '+m[3]:'')+')');return GM.p.find(x=>norm(x[1])===want);}
@@ -346,7 +345,7 @@ return finishOverall(saved.filter(r=>byId.has(r[0])).map(([id,sh,points,best])=>
 let keyFor=[],keyValue='';
 function overallKey(){if(keyFor[0]!==GM||keyFor[1]!==RM){keyFor=[GM,RM];keyValue=dataKey();}return keyValue;}
 let overallJob=0,overallRunning=null;
-function showOverall(){const saved=[ls.get('rf-overall8'),RO].find(s=>s&&s.k===overallKey());if(saved){RROWS=restoreOverall(saved.rows);drawRaid();return;}
+function showOverall(){const saved=[ls.get('rf-overall9'),RO].find(s=>s&&s.k===overallKey());if(saved){RROWS=restoreOverall(saved.rows);drawRaid();return;}
 $('rout').innerHTML='<p class="err">Calculating all-time ranking…</p>';if(overallRunning!==overallKey())computeOverall();}
 function showCurrent(){const totals=new Map();
 raidBosses().filter(b=>b.hp>=RAID_TIERS.mega[0]&&b.tier!==RAID_TIERS['4']).forEach(b=>{if(!RCACHE.has(b))RCACHE.set(b,rankRaid(b,100));addOverallPoints(totals,b,RCACHE.get(b));});
@@ -356,7 +355,7 @@ const step=()=>{if(job!==overallJob)return;const end=performance.now()+40;
 while(i<bosses.length&&performance.now()<end)addOverallPoints(totals,bosses[i++]);
 const onOverall=RSEL===OVERALL.label;
 if(i<bosses.length){if(onOverall)$('rout').innerHTML='<p class="err">Calculating all-time ranking… '+i+' / '+bosses.length+' bosses</p>';setTimeout(step,0);return;}
-const saved=savedOverall(totals);overallRunning=null;ls.set('rf-overall8',{k:key,rows:saved});
+const saved=savedOverall(totals);overallRunning=null;ls.set('rf-overall9',{k:key,rows:saved});
 if(onOverall){RROWS=restoreOverall(saved);drawRaid();}};
 step();}
 
@@ -394,7 +393,7 @@ document.querySelector('.tabs').addEventListener('click',()=>{if(RDIRTY)runRaid(
 function init(){$('tl').value=S.tl;fillGrunts();setSrc();shareGM();run();fillBosses();setRaidSrc();runRaid();}
 function shareGM(){dispatchEvent(new CustomEvent('gamemaster',{detail:{d:GM.d,date:GMT,fallback:GMF}}));}
 // cached live data from earlier visits (drop caches from older versions)
-try{['rf-gm','rf-gm2','rf-gm3','rf-gm4','rf-gm5','rf-rk','rf-rm','rf-rm2','rf-overall','rf-overall2','rf-overall3','rf-overall4','rf-overall5','rf-overall6','rf-overall7','gm7'].forEach(k=>localStorage.removeItem(k));}catch(e){}
+try{['rf-gm','rf-gm2','rf-gm3','rf-gm4','rf-gm5','rf-rk','rf-rm','rf-rm2','rf-overall','rf-overall2','rf-overall3','rf-overall4','rf-overall5','rf-overall6','rf-overall7','rf-overall8','gm7'].forEach(k=>localStorage.removeItem(k));}catch(e){}
 (()=>{const g=ls.get('rf-gm6'),r=ls.get('rf-rk2'),d=ls.get('rf-rd'),m=ls.get('rf-rm3');if(g&&g.d&&g.d.p&&g.d.c){GM=g.d;GMT=g.c;GMF=false;}if(r&&r.d&&r.d.g&&r.d.g.length){RK=r.d;RKT=r.c;RKF=false;}
 if(d&&d.d&&d.d.b&&d.d.b.length){RD=d.d;RDT=d.c;RDF=false;}if(m&&m.d&&Object.keys(m.d).length){RM=m.d;RMT=m.c;RMF=false;}})();
 init();
