@@ -279,7 +279,9 @@ const TC={normal:'#a0a29f',fire:'#fba54c',water:'#539ddf',electric:'#f2d94e',gra
 const SE={normal:[],fire:['grass','ice','bug','steel'],water:['fire','ground','rock'],electric:['water','flying'],grass:['water','ground','rock'],ice:['grass','ground','flying','dragon'],fighting:['normal','ice','rock','dark','steel'],poison:['grass','fairy'],ground:['fire','electric','poison','rock','steel'],flying:['grass','fighting','bug'],psychic:['fighting','poison'],bug:['grass','psychic','dark'],rock:['fire','ice','flying','bug'],ghost:['psychic','ghost'],dragon:['dragon'],dark:['psychic','ghost'],steel:['ice','rock','fairy'],fairy:['fighting','dragon','dark']};
 const NVE={normal:['rock','steel'],fire:['fire','water','rock','dragon'],water:['water','grass','dragon'],electric:['electric','grass','dragon'],grass:['fire','grass','poison','flying','bug','dragon','steel'],ice:['fire','water','ice','steel'],fighting:['poison','flying','psychic','bug','fairy'],poison:['poison','ground','rock','ghost'],ground:['grass','bug'],flying:['electric','rock','steel'],psychic:['psychic','steel'],bug:['fire','fighting','poison','flying','ghost','steel','fairy'],rock:['fighting','ground','steel'],ghost:['dark'],dragon:['steel'],dark:['fighting','dark','fairy'],steel:['fire','water','electric','steel'],fairy:['fire','poison','steel']};
 const IMM={normal:['ghost'],electric:['ground'],fighting:['ghost'],poison:['steel'],ground:['flying'],psychic:['dark'],ghost:['normal'],dragon:['fairy']};
-function eff(mt,dts){let e=1;for(const d of dts){if((SE[mt]||[]).includes(d))e*=1.6;else if((IMM[mt]||[]).includes(d))e*=0.390625;else if((NVE[mt]||[]).includes(d))e*=0.625;}return e;}
+// type chart as a lookup table: EFF[move type][defender type]
+const EFF={};for(const a in TC){EFF[a]={};for(const d in TC)EFF[a][d]=SE[a].includes(d)?1.6:(IMM[a]||[]).includes(d)?0.390625:NVE[a].includes(d)?0.625:1;}
+function eff(mt,dts){const row=EFF[mt];let e=1;if(row)for(const d of dts){const v=row[d];if(v!==undefined)e*=v;}return e;}
 //</calc>
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const dots=ts=>'<span class="dots">'+ts.map(t=>'<span class="dot" style="background:'+(TC[t]||'#888')+'" title="'+t+'"></span>').join('')+'</span>';
@@ -385,32 +387,41 @@ const b=raidBoss(n.replace(/ \((Male|Female)\)$/i,''),x,tier);if(b.moves.length)
 RBL=[OVERALL,CURRENT,...bosses.sort((a,b)=>b.hp-a.hp||b.cpm-a.cpm)];return RBL;}
 function hitDamage(mv,atk,def,atkTypes,defTypes,bonus){const stab=atkTypes.includes(mv[0])?1.2:1;return Math.floor(0.5*mv[1]*atk/def*stab*eff(mv[0],defTypes)*bonus)+1;}
 function megaBonus(mv,x,types){if(!(x[7]&2))return 1;return types.includes(mv[0])?1.3:1.1;}
-function incomingDps(boss,[F,C],def,types,outgoing){const BA=(boss.atk+15)*boss.cpm,fd=hitDamage(F,BA,def,boss.types,types,1),cd=hitDamage(C,BA,def,boss.types,types,1),gain=outgoing*0.5/1000;
+// fd, cd: the boss's fast and charged hit on this attacker
+function incomingDps([F,C],fd,cd,outgoing){const gain=outgoing*0.5/1000;
 const fasts=Math.max(0,(-C[3]-gain*(C[2]+BOSS_DELAY))/(F[3]+gain*(F[2]+BOSS_DELAY)));
 return (fasts*fd+cd)/((fasts*(F[2]+BOSS_DELAY)+C[2]+BOSS_DELAY)/1000);}
 // Boss and attacker hits land one by one; other: damage per ms from the rest of the lobby. Returns [raid s, faints, your dps]
+// Hot loop: moves are unpacked into plain numbers (duration, energy, damage window) and the clock is advanced inline.
+// Advancing to time nt: the lobby deals other*(nt-t); if that finishes the boss, stop at the exact moment it falls.
 function fight(c,boss,[BF,BC],other){const BA=(boss.atk+15)*boss.cpm,bf=hitDamage(BF,BA,c.def,boss.types,c.types,1),bc=hitDamage(BC,BA,c.def,boss.types,c.types,1),{F,C,fd,cd,maxHp}=c,cost=-C[3];
-let t=0,left=other?boss.hp/FRIEND:boss.hp,hp=maxHp,en=0,faints=0,dealt=0,bEn=0,bNext=0,bHit=Infinity,bMv=null,aHit=Infinity,aEnd=0,aMv=null;
-const adv=nt=>{left-=other*(nt-t);t=nt;if(left<=0&&other){t+=left/other;return true;}return false;};
+const fDur=F[2],fEn=F[3],fWin=F[4],cDur=C[2],cEn=C[3],cWin=C[4],bfDur=BF[2],bfEn=BF[3],bfWin=BF[4],bcDur=BC[2],bcEn=BC[3],bcWin=BC[4],bCost=-bcEn;
+let t=0,left=other?boss.hp/FRIEND:boss.hp,hp=maxHp,en=0,faints=0,dealt=0,bEn=0,bNext=0,bHit=Infinity,bOn=false,bCh=false,aHit=Infinity,aEnd=0,aOn=false,aCh=false;
 while(left>0&&t<36e5){
-if(!bMv&&bNext<=Math.min(aHit,aEnd)){if(adv(bNext))break;bMv=bEn>=-BC[3]?BC:BF;bHit=t+bMv[4];bEn=Math.min(100,bEn+bMv[3]);bNext=t+bMv[2]+BOSS_DELAY;continue;}
-if(!aMv&&aEnd<=Math.min(bHit,bNext)){if(adv(aEnd))break;aMv=en>=cost?C:F;aHit=t+aMv[4];aEnd=t+aMv[2];continue;}
-const next=Math.min(aHit,bHit,aMv?aEnd:Infinity);if(adv(next))break;
-if(next===aHit){const d=Math.min(aMv===C?cd:fd,left);left-=d;dealt+=d;bEn=Math.min(100,bEn+d/2);en=aMv===C?en+C[3]:Math.min(100,en+F[3]);aHit=Infinity;}
-else if(next===bHit){const d=bMv===BC?bc:bf;if(d>=hp){faints++;hp=maxHp;en=0;aMv=null;aHit=Infinity;aEnd=t+SWAP+(faints%6?0:RELOBBY);if(faints%6===0)bNext=Math.max(bNext,aEnd);}else{hp-=d;en=Math.min(100,en+d/2);}bMv=null;bHit=Infinity;}
-else aMv=null;}
+if(!bOn&&bNext<=Math.min(aHit,aEnd)){if(other){left-=other*(bNext-t);t=bNext;if(left<=0){t+=left/other;break;}}else t=bNext;
+bOn=true;bCh=bEn>=bCost;bHit=t+(bCh?bcWin:bfWin);bEn=Math.min(100,bEn+(bCh?bcEn:bfEn));bNext=t+(bCh?bcDur:bfDur)+BOSS_DELAY;continue;}
+if(!aOn&&aEnd<=Math.min(bHit,bNext)){if(other){left-=other*(aEnd-t);t=aEnd;if(left<=0){t+=left/other;break;}}else t=aEnd;
+aOn=true;aCh=en>=cost;aHit=t+(aCh?cWin:fWin);aEnd=t+(aCh?cDur:fDur);continue;}
+const next=Math.min(aHit,bHit,aOn?aEnd:Infinity);if(other){left-=other*(next-t);t=next;if(left<=0){t+=left/other;break;}}else t=next;
+if(next===aHit){const d=Math.min(aCh?cd:fd,left);left-=d;dealt+=d;bEn=Math.min(100,bEn+d/2);en=aCh?en+cEn:Math.min(100,en+fEn);aHit=Infinity;}
+else if(next===bHit){const d=bCh?bc:bf;if(d>=hp){faints++;hp=maxHp;en=0;aOn=false;aHit=Infinity;aEnd=t+SWAP+(faints%6?0:RELOBBY);if(faints%6===0)bNext=Math.max(bNext,aEnd);}else{hp-=d;en=Math.min(100,en+d/2);}bOn=false;bHit=Infinity;}
+else aOn=false;}
 return [t/1000,faints,dealt/t*1000];}
 function chargedMoves(x){const special='+'+x[0],moves=GM.c[x[0]]||[];if(raidMove(special))return [...moves,special];return moves;}
 // Solo time; in a lobby your team rarely wipes, so a faint only costs the switch
 function estimateTime(outgoing,maxHp,incoming,bossHp,lobby){const lives=bossHp*incoming/(outgoing*maxHp);return bossHp/outgoing+lives*(SWAP+(lobby?0:RELOBBY/6))/1000;}
 function isLobby(boss){return boss.hp>=RAID_TIERS.mega[0];}
-function rankRaid(boss,limit){const cp=cpm(50),BD=(boss.def+15)*boss.cpm,lobby=isLobby(boss),candidates=[];
+function rankRaid(boss,limit){const cp=cpm(50),BD=(boss.def+15)*boss.cpm,BA=(boss.atk+15)*boss.cpm,lobby=isLobby(boss),candidates=[];
 for(const x of GM.p){const f=x[7];if(f&8)continue;const types=x[5].split('/'),variants=[false];if(f&1)variants.push(true);
+const charged=chargedMoves(x).map(ck=>[ck,raidMove(ck.replace('*',''))]).filter(([,C])=>C&&C[3]<0);
 for(const sh of variants){const A=(x[2]+15)*cp*(sh?1.2:1),def=(x[3]+15)*cp*(sh?5/6:1),maxHp=Math.floor((x[4]+15)*cp);const opts=[];
+// worked out once per attacker: the boss's hits on it, and its charged move damage
+const hits=boss.moves.map(([BF,BC])=>[hitDamage(BF,BA,def,boss.types,types,1),hitDamage(BC,BA,def,boss.types,types,1)]);
+const chs=charged.filter(([ck])=>!(sh&&ck.replace('*','')==='RETURN')).map(([ck,C])=>[ck,C,hitDamage(C,A,BD,types,boss.types,megaBonus(C,x,types))]);
 for(const fk of (sh&&x[8])||x[6]){const F=raidMove(fk.replace('*',''));if(!F||F[3]<=0)continue;const fd=hitDamage(F,A,BD,types,boss.types,megaBonus(F,x,types));
-for(const ck of chargedMoves(x)){if(sh&&ck.replace('*','')==='RETURN')continue;const C=raidMove(ck.replace('*',''));if(!C||C[3]>=0)continue;const cd=hitDamage(C,A,BD,types,boss.types,megaBonus(C,x,types));
+for(const [ck,C,cd] of chs){
 const fasts=Math.ceil(-C[3]/F[3]),outgoing=(fasts*fd+cd)/((fasts*F[2]+C[2])/1000);
-const rates=boss.moves.map(p=>incomingDps(boss,p,def,types,outgoing)),mean=rates.reduce((s,r)=>s+r,0)/rates.length,est=estimateTime(outgoing,maxHp,mean,boss.hp,lobby);
+let sum=0;for(let i=0;i<hits.length;i++)sum+=incomingDps(boss.moves[i],hits[i][0],hits[i][1],outgoing);const est=estimateTime(outgoing,maxHp,sum/hits.length,boss.hp,lobby);
 opts.push({x,sh,types,def,maxHp,est,fk,ck,F,C,fd,cd});}}
 // keep the best-looking movesets; the simulation below picks among them
 if(opts.length){opts.sort((a,b)=>a.est-b.est);candidates.push({...opts[0],opts:opts.slice(0,SIM_MOVESETS)});}}}
