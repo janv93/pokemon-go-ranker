@@ -26,7 +26,7 @@ To rebuild without downloading data, reuse what the current `index.html` embeds:
 - **Auto**: one Pokémon, ranked among released Pokémon of each of its own types:
   - Rocket: fast move of the type. Raid: fast or charged move of the type. Max attacker: Max Attack of the type (its fast move type, or its own G-Max or special Max Move). Max tanks and healers: among Dynamax Pokémon of the type.
   - Only opponents weak to the type count. Rocket: grunts whose lineup the type hits super effectively on average. Raid: only 4★ and stronger bosses (all-time and current). Max tanks and healers: every Max boss.
-  - Score: the average over opponents of the score relative to #1 against each one.
+  - Score: the average over opponents of the score relative to the best against each one, then scaled so #1 is 100%.
   - Entries without a rank are hidden, and so is a section without entries. When everything is hidden, a "Nothing to rank" card explains why.
   - Rankings are cached per type for the session, and raid ranks are calculated in the background with progress.
 - **Rocket / Raid / Max**: rankings against one chosen opponent, plus all-time views.
