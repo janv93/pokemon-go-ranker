@@ -101,7 +101,7 @@ tr.grp.cut td{border-top:2px dashed var(--line)}
 .st .tip{position:absolute;bottom:calc(100% + 2px);transform:translateX(-50%);white-space:nowrap;font-size:.78rem;padding:4px 9px;border-radius:6px;background:var(--fg);color:var(--surface);pointer-events:none;z-index:5;box-shadow:0 4px 14px rgba(0,0,0,.3)}
 .st u{position:absolute;left:-8px;top:9px;height:2px;border-radius:1px;background:var(--accent);transition:width .2s}
 .am{display:flex;flex-wrap:wrap;align-items:center;gap:6px}.mc{display:inline-flex;align-items:center;gap:6px;font-size:.85rem;padding:4px 10px;border-radius:999px;background:var(--bg);border:1px solid var(--line)}
-.an{font-size:.78rem;color:var(--muted)}
+.an{font-size:.78rem;color:var(--muted)}.ctx{margin-left:auto;white-space:nowrap}
 .nl{margin:6px 0 0;padding:0;list-style:none;display:grid;gap:8px;color:var(--muted);font-size:.9rem}.nl li{display:grid;grid-template-columns:4.5rem 1fr}.nl b{color:var(--fg);font-weight:500}
 #iv table{font-family:var(--mono)}#iv th{font-size:.75rem;letter-spacing:.08em;padding:6px 10px}#iv td{padding:9px 10px}#iv th:last-child,#iv td:last-child{text-align:right}#iv tr:last-child td{border-bottom:0}
 .fam{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:baseline}.lnk{background:none;border:0;padding:2px 0;font:inherit;font-weight:500;color:var(--accent);text-decoration:underline;text-decoration-color:var(--muted);text-underline-offset:3px;cursor:pointer}.lnk:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
@@ -626,21 +626,21 @@ function keyName(k){if(KND!==GM){KND=GM;KNM=new Map(GM.p.map(x=>[x[0],x[1]]));}l
 if(!KNM.has(id)&&id.endsWith('_s')){sh=true;id=id.slice(0,-2);}return (sh?'Shadow ':'')+(kind==='g'?'G-Max ':'')+(KNM.get(id)||id);}
 // strips on screen by id: [name, score, is this one] per tick, best first; read when hovering
 const AST=new Map();let ASTN=0;
-function entry(t,role,res,v,moves,who,vs,extra,key){const rk=autoRank(res,v),n=res.sorted.length+(extra||0);
+function entry(t,role,res,v,moves,vs,extra,key){const rk=autoRank(res,v),n=res.sorted.length+(extra||0);
 const items=res.list.map(([k,s])=>[keyName(k),s,k===key]);if(!items.some(e=>e[2])){items.push([keyName(key),v,true]);items.sort((a,b)=>b[1]-a[1]);}const id=++ASTN;AST.set(id,items);
 // the rank number grows exponentially with its percentile in the group: barely in the lower ranks, steeply near #1; bold in the top half
 const p=n>1?1-(rk-1)/(n-1):1,g=(Math.exp(5*p)-1)/(Math.exp(5)-1);
 return '<div class="ae'+(p>=.5?' hi':'')+'" data-p="'+p.toFixed(4)+'" style="--g:'+g.toFixed(3)+'">'+head(t,role,'<span class="ar"><span class="rn">#'+rk+'</span><small> / '+n+'</small></span>')
 +'<div class="st" aria-hidden="true" data-i="'+id+'">'+items.map(e=>e[2]?'<i class="me" style="left:'+pct(e[1])+'%;background:'+TC[t]+';color:'+TC[t]+'"></i>':'<i style="left:'+pct(e[1])+'%"></i>').join('')
 +'<s style="left:'+pct(v)+'%;border-bottom-color:'+TC[t]+'"></s></div>'
-+'<div class="am">'+moves+'</div><div class="an">'+Math.round(v*100)+'% · among '+n+' '+who+' · vs '+vs+'</div></div>';}
++'<div class="am">'+moves+'<span class="an ctx">'+Math.round(v*100)+'% · vs '+vs+'</span></div></div>';}
 const grunt=n=>n+(n===1?' grunt':' grunts'),boss=n=>n+(n===1?' boss':' bosses');
 // types in a section, best percentile first (Max: by the type's best entry; still calculating: last)
 const bestP=h=>Math.max(-1,...[...h.matchAll(/data-p="([\d.]+)"/g)].map(m=>+m[1]));
 const byBest=list=>list.filter(Boolean).map((h,i)=>[bestP(h),i,h]).sort((a,b)=>b[0]-a[0]||a[1]-b[1]).map(e=>e[2]).join('');
 function rocketSection(x,k,types){if(isMega(x))return '';
 return byBest(types.map(t=>{const r=autoRocket(t);if(!r.n)return '';const v=r.avg.get(k);if(v===undefined)return '';
-return entry(t,'',r,v,chip(top(r.mv.get(k))),TN(t)+' attackers',grunt(r.n),0,k);}));}
+return entry(t,'',r,v,chip(top(r.mv.get(k))),grunt(r.n),0,k);}));}
 // can this Pokémon rank in raids with this type at all (a fast or a charged move of that type)? if not, nothing is calculated
 function raidCanRank(x,sh,t){const fast=((sh&&x[8])||x[6]).some(fk=>{const F=raidMove(fk.replace('*',''));return F&&F[3]>0&&F[0]===t;});
 return fast||chargedMoves(x).some(ck=>{const C=raidMove(ck.replace('*',''));return C&&C[3]<0&&C[0]===t;});}
@@ -648,7 +648,7 @@ function raidSection(x,sh,k,types){return byBest(types.map(t=>{const r=ARD.get(t
 if(!raidCanRank(x,sh,t))return '';
 if(!r){queueRaid(t);const job=AJOB&&AJOB.t===t?AJOB:null;return '<div class="ae">'+head(t,'','<span class="ar none">…</span>')+'<div class="st" aria-hidden="true"><u style="width:'+(job&&job.n?job.i/job.n*100:0)+'%"></u></div><div class="an">'+(job?'Calculating… '+job.i+' / '+job.n+' bosses':'Waiting…')+'</div></div>';}
 const v=r.avg.get(k);if(v===undefined)return '';
-return entry(t,'',r,v,chipsFC(top(r.mv.get(k))),TN(t)+' attackers',boss(r.n),0,k);}));}
+return entry(t,'',r,v,chipsFC(top(r.mv.get(k))),boss(r.n),0,k);}));}
 // attacker: the Max Move it uses, and the quickest fast move of that type to charge it
 function maxAttackMoves(c,t){if(c.mv)return chip(dots([c.mv[0]])+esc(c.mv[2]));
 const fk=c.x[6].map(k=>[k,raidMove(k.replace('*',''))]).filter(([,F])=>F&&F[3]>0&&F[0]===t).sort((a,b)=>a[1][2]-b[1][2])[0][0];
@@ -659,11 +659,11 @@ const preD=mine.length?null:pre.find(c=>c.kind==='d')||null,many=mine.length+pre
 return byBest(types.map(t=>{const res=autoMax(t),sup=autoSupportType(t,preD);let h='';
 if(res.n){const att=[...mine,...pre].map(c=>{let v=res.avg.get(c.x[0]+'|'+c.kind),extra=0;
 if(v===undefined&&pre.includes(c)&&maxAttackDmg(c,res.bosses[0],t)>0){v=res.bosses.reduce((s,b,i)=>s+maxAttackDmg(c,b,t)/res.best[i],0)/res.n;extra=1;}
-return v===undefined?'':entry(t,(c.kind==='g'?'G-Max attacker':many?'Dynamax attacker':'Attacker'),res,v,maxAttackMoves(c,t),TN(t)+' attackers',boss(res.n),extra,c.x[0]+'|'+c.kind);}).filter(Boolean);
+return v===undefined?'':entry(t,(c.kind==='g'?'G-Max attacker':many?'Dynamax attacker':'Attacker'),res,v,maxAttackMoves(c,t),boss(res.n),extra,c.x[0]+'|'+c.kind);}).filter(Boolean);
 h+=att.length?att.join(''):'';}
 const tv=sup.tank.avg.get(x[0]),hv=sup.heal.avg.get(x[0]),all='all '+sup.n+' bosses';
-h+=tv===undefined?'':entry(t,'Tank',sup.tank,tv,chipsFC(top(sup.tank.mv.get(x[0]))),TN(t)+' tanks',all,0,x[0]);
-h+=hv===undefined?'':entry(t,'Healer',sup.heal,hv,chip('Max Spirit')+'<span class="an">heals '+sup.heal.hp.get(x[0])+' HP</span>',TN(t)+' healers',all,0,x[0]);
+h+=tv===undefined?'':entry(t,'Tank',sup.tank,tv,chipsFC(top(sup.tank.mv.get(x[0]))),all,0,x[0]);
+h+=hv===undefined?'':entry(t,'Healer',sup.heal,hv,chip('Max Spirit')+'<span class="an">heals '+sup.heal.hp.get(x[0])+' HP</span>',all,0,x[0]);
 return h;}));}
 // hovering (or touching) a strip names the Pokémon of the nearest tick
 function stripTip(st,clientX){const items=AST.get(+st.dataset.i);if(!items)return;const r=st.getBoundingClientRect(),f=(clientX-r.left)/r.width;
