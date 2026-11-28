@@ -22,6 +22,16 @@ let multiD=null,multi=null;function colored(n){if(multiD!==D){multiD=D;const g={
 let fkD=null,fkM=null;function fk(x){if(fkD!==D){fkD=D;const par={},f=k=>{while((par[k]??=k)!==k)k=par[k];return k;},first={};D.forEach(y=>{const b=baseOf(y[0]);if(b in first)par[f(y[4])]=f(first[b]);else first[b]=y[4];});fkM=new Map(D.map(y=>[y,f(y[4])]));}return fkM.get(x);}
 function nameStyle(n){const c=COL[n];if(!c||!colored(n))return '';const a=fit(c[0]);if(c.length<2)return ' style="color:'+a+';-webkit-text-fill-color:'+a+'"';const b=fit(c[1]);
 return ' class="pn" style="background-image:linear-gradient(110deg,'+a+' 0 40%,'+b+' 40% 60%,'+a+' 60% 100%)"';}
+// related Pokémon (evolutions, megas, regional forms) as links, one row per region; keep: which names to show; cur: the name to mark, a form with B's stats that isn't listed itself
+function famHtml(B,keep=()=>true,cur=B[0]){const famAll=D.filter(x=>fk(x)===fk(B)),groups={};famAll.forEach(x=>(groups[x[5]]=groups[x[5]]||[]).push(x));
+const par=x=>{if(!x[6])return;return (x[5]&&famAll.find(y=>y[0]===x[6]+' ('+x[5]+')'))||famAll.find(y=>y[0]===x[6]);},dep=(x,k=0)=>{const p=par(x);return p&&k<5?dep(p,k+1)+1:0;};
+for(const g in groups){const G=groups[g];for(let q=0;q<G.length;q++){const p=par(G[q]);if(p&&!G.includes(p))G.push(p);}G.sort((x,y)=>dep(x)-dep(y)||famAll.indexOf(x)-famAll.indexOf(y));
+groups[g]=G.filter(x=>x[0]===cur||keep(x[0]));if(cur!==B[0]&&g===B[5])groups[g].splice(groups[g].indexOf(B)+1,0,[cur]);}
+const n=new Set(Object.values(groups).flat().map(x=>x[0])).size,fam=n>1?Object.keys(groups).filter(g=>groups[g].length).sort((p,q)=>(p?1:0)-(q?1:0)):[];
+const sn=x=>(fam.length>1?x[0].replace(/ \((Alolan|Galarian|Hisuian|Paldean)\)/,''):x[0]).replace(/</g,'&lt;');
+return fam.map(g=>'<div class="fam">'+(fam.length>1?'<span class="rl">'+(g||'Normal')+'</span>':'')+groups[g].map(x=>x[0]===cur?'<span class="cur"><span'+nameStyle(x[0])+'>'+sn(x)+'</span></span>':'<button type="button" class="lnk" data-n="'+x[0].replace(/"/g,'&quot;')+'"><span'+nameStyle(x[0])+'>'+sn(x)+'</span></button>').join('')+'</div>').join('');}
+// for the Auto tab: by name; a form missing here (same stats as its base) is shown with its base's family
+window.famLinks=(name,keep)=>{const B=map.get(name.toLowerCase())||map.get(name.split(' (')[0].toLowerCase());return B?famHtml(B,keep,name):'';};
 function run(){const B=find($('sp').value);const a=iv('a'),d=iv('d'),s=iv('s');const o=$('ivout');
 if(!B){o.innerHTML='<p class="err">Pick a Pokémon from the list.</p>';return;}
 if(a===null||d===null||s===null){o.innerHTML='<p class="err">Enter IVs from 0 to 15.</p>';return;}
@@ -31,12 +41,7 @@ const stripes=(bg,fg,k)=>{if(k==='split')return 'linear-gradient(90deg,'+bg+' 0 
 LG=Infinity;const maxCP=best(B,a,d,s,50).cp;let prev=0;
 for(const [n,c,bg,fg,k] of LS){if(maxCP<=prev)break;prev=c;LG=c;const t=table(B,50);const j=t.findIndex(x=>x.iv[0]===a&&x.iv[1]===d&&x.iv[2]===s),i=j<0?-1:t.findIndex(x=>x.sp===t[j].sp);
 rows+='<tr><td><span class="ln" style="background-image:'+stripes(bg,fg,k)+'">'+n+'</span></td>'+(i<0?'<td>–</td><td>–</td><td>over cap</td>':'<td>'+(i+1)+'</td><td>'+(t[j].sp/t[0].sp*100).toFixed(2)+'%</td><td>'+t[j].cp+'</td>')+'</tr>';}
-const famAll=D.filter(x=>fk(x)===fk(B)),groups={};famAll.forEach(x=>(groups[x[5]]=groups[x[5]]||[]).push(x));
-const par=x=>{if(!x[6])return;return (x[5]&&famAll.find(y=>y[0]===x[6]+' ('+x[5]+')'))||famAll.find(y=>y[0]===x[6]);},dep=(x,k=0)=>{const p=par(x);return p&&k<5?dep(p,k+1)+1:0;};
-for(const g in groups){const G=groups[g];for(let q=0;q<G.length;q++){const p=par(G[q]);if(p&&!G.includes(p))G.push(p);}G.sort((x,y)=>dep(x)-dep(y)||famAll.indexOf(x)-famAll.indexOf(y));}
-const fam=famAll.length>1?Object.keys(groups).sort((p,q)=>(p?1:0)-(q?1:0)):[];
-const sn=x=>(fam.length>1?x[0].replace(/ \((Alolan|Galarian|Hisuian|Paldean)\)/,''):x[0]).replace(/</g,'&lt;');
-o.innerHTML=fam.map(g=>'<div class="fam">'+(fam.length>1?'<span class="rl">'+(g||'Normal')+'</span>':'')+groups[g].map(x=>x===B?'<span class="cur"><span'+nameStyle(x[0])+'>'+sn(x)+'</span></span>':'<button type="button" class="lnk" data-n="'+x[0].replace(/"/g,'&quot;')+'"><span'+nameStyle(x[0])+'>'+sn(x)+'</span></button>').join('')+'</div>').join('')+'<table><thead><tr><th>League</th><th>Rank</th><th>%</th><th>CP</th></tr></thead><tbody>'+rows+'</tbody></table>';
+o.innerHTML=famHtml(B)+'<table><thead><tr><th>League</th><th>Rank</th><th>%</th><th>CP</th></tr></thead><tbody>'+rows+'</tbody></table>';
 }
 const sug=$('sug');let hi=-1,items=[];
 function show(){const q=$('sp').value.trim().toLowerCase();if(!q){hide();return;}

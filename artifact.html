@@ -99,7 +99,7 @@ tr.grp.cut td{border-top:2px dashed var(--line)}
 .nl{margin:6px 0 0;padding:0;list-style:none;display:grid;gap:8px;color:var(--muted);font-size:.9rem}.nl li{display:grid;grid-template-columns:4.5rem 1fr}.nl b{color:var(--fg);font-weight:500}
 #iv table{font-family:var(--mono)}#iv th{font-size:.75rem;letter-spacing:.08em;padding:6px 10px}#iv td{padding:9px 10px}#iv th:last-child,#iv td:last-child{text-align:right}#iv tr:last-child td{border-bottom:0}
 .fam{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:baseline}.lnk{background:none;border:0;padding:2px 0;font:inherit;font-weight:500;color:var(--accent);text-decoration:underline;text-decoration-color:var(--muted);text-underline-offset:3px;cursor:pointer}.lnk:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-.cur{padding:2px 0;font-weight:700}.pn{-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent}.ln{text-transform:uppercase;letter-spacing:.08em;font-weight:700;font-size:.95rem;-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent}.rl{width:4.5rem;font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);padding-top:5px}
+.cur{padding:2px 0;font-weight:700}#afam{display:grid;gap:14px}.pn{-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent}.ln{text-transform:uppercase;letter-spacing:.08em;font-weight:700;font-size:.95rem;-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent}.rl{width:4.5rem;font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);padding-top:5px}
 @media (max-width:420px){table{font-size:.9rem}td,th{padding-left:4px;padding-right:4px}.shi{margin-left:3px}}
 </style>
 <main>
@@ -120,6 +120,7 @@ tr.grp.cut td{border-top:2px dashed var(--line)}
 <div class="view" id="auto" role="tabpanel" aria-labelledby="t-auto" hidden>
 <form class="card" id="af" style="position:relative" autocomplete="off">
 <div><label for="asp">Pokémon</label><div class="ac"><input id="asp" value="Mamoswine" role="combobox" aria-autocomplete="list" aria-controls="asug" aria-expanded="false" autocapitalize="words" spellcheck="false" enterkeyhint="go"><ul id="asug" role="listbox" hidden></ul></div></div>
+<div id="afam" hidden></div>
 <div class="arow" id="arow"><label class="chk" id="ashw" hidden><input type="checkbox" id="ash">Shadow</label><div class="tlr" id="atlw"><label for="atl">Trainer lvl</label><input id="atl" type="number" inputmode="numeric" min="8" max="80" value="50"></div></div>
 <button type="submit" tabindex="-1" aria-hidden="true" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;border:0;padding:0"></button>
 </form>
@@ -196,6 +197,16 @@ let multiD=null,multi=null;function colored(n){if(multiD!==D){multiD=D;const g={
 let fkD=null,fkM=null;function fk(x){if(fkD!==D){fkD=D;const par={},f=k=>{while((par[k]??=k)!==k)k=par[k];return k;},first={};D.forEach(y=>{const b=baseOf(y[0]);if(b in first)par[f(y[4])]=f(first[b]);else first[b]=y[4];});fkM=new Map(D.map(y=>[y,f(y[4])]));}return fkM.get(x);}
 function nameStyle(n){const c=COL[n];if(!c||!colored(n))return '';const a=fit(c[0]);if(c.length<2)return ' style="color:'+a+';-webkit-text-fill-color:'+a+'"';const b=fit(c[1]);
 return ' class="pn" style="background-image:linear-gradient(110deg,'+a+' 0 40%,'+b+' 40% 60%,'+a+' 60% 100%)"';}
+// related Pokémon (evolutions, megas, regional forms) as links, one row per region; keep: which names to show; cur: the name to mark, a form with B's stats that isn't listed itself
+function famHtml(B,keep=()=>true,cur=B[0]){const famAll=D.filter(x=>fk(x)===fk(B)),groups={};famAll.forEach(x=>(groups[x[5]]=groups[x[5]]||[]).push(x));
+const par=x=>{if(!x[6])return;return (x[5]&&famAll.find(y=>y[0]===x[6]+' ('+x[5]+')'))||famAll.find(y=>y[0]===x[6]);},dep=(x,k=0)=>{const p=par(x);return p&&k<5?dep(p,k+1)+1:0;};
+for(const g in groups){const G=groups[g];for(let q=0;q<G.length;q++){const p=par(G[q]);if(p&&!G.includes(p))G.push(p);}G.sort((x,y)=>dep(x)-dep(y)||famAll.indexOf(x)-famAll.indexOf(y));
+groups[g]=G.filter(x=>x[0]===cur||keep(x[0]));if(cur!==B[0]&&g===B[5])groups[g].splice(groups[g].indexOf(B)+1,0,[cur]);}
+const n=new Set(Object.values(groups).flat().map(x=>x[0])).size,fam=n>1?Object.keys(groups).filter(g=>groups[g].length).sort((p,q)=>(p?1:0)-(q?1:0)):[];
+const sn=x=>(fam.length>1?x[0].replace(/ \((Alolan|Galarian|Hisuian|Paldean)\)/,''):x[0]).replace(/</g,'&lt;');
+return fam.map(g=>'<div class="fam">'+(fam.length>1?'<span class="rl">'+(g||'Normal')+'</span>':'')+groups[g].map(x=>x[0]===cur?'<span class="cur"><span'+nameStyle(x[0])+'>'+sn(x)+'</span></span>':'<button type="button" class="lnk" data-n="'+x[0].replace(/"/g,'&quot;')+'"><span'+nameStyle(x[0])+'>'+sn(x)+'</span></button>').join('')+'</div>').join('');}
+// for the Auto tab: by name; a form missing here (same stats as its base) is shown with its base's family
+window.famLinks=(name,keep)=>{const B=map.get(name.toLowerCase())||map.get(name.split(' (')[0].toLowerCase());return B?famHtml(B,keep,name):'';};
 function run(){const B=find($('sp').value);const a=iv('a'),d=iv('d'),s=iv('s');const o=$('ivout');
 if(!B){o.innerHTML='<p class="err">Pick a Pokémon from the list.</p>';return;}
 if(a===null||d===null||s===null){o.innerHTML='<p class="err">Enter IVs from 0 to 15.</p>';return;}
@@ -205,12 +216,7 @@ const stripes=(bg,fg,k)=>{if(k==='split')return 'linear-gradient(90deg,'+bg+' 0 
 LG=Infinity;const maxCP=best(B,a,d,s,50).cp;let prev=0;
 for(const [n,c,bg,fg,k] of LS){if(maxCP<=prev)break;prev=c;LG=c;const t=table(B,50);const j=t.findIndex(x=>x.iv[0]===a&&x.iv[1]===d&&x.iv[2]===s),i=j<0?-1:t.findIndex(x=>x.sp===t[j].sp);
 rows+='<tr><td><span class="ln" style="background-image:'+stripes(bg,fg,k)+'">'+n+'</span></td>'+(i<0?'<td>–</td><td>–</td><td>over cap</td>':'<td>'+(i+1)+'</td><td>'+(t[j].sp/t[0].sp*100).toFixed(2)+'%</td><td>'+t[j].cp+'</td>')+'</tr>';}
-const famAll=D.filter(x=>fk(x)===fk(B)),groups={};famAll.forEach(x=>(groups[x[5]]=groups[x[5]]||[]).push(x));
-const par=x=>{if(!x[6])return;return (x[5]&&famAll.find(y=>y[0]===x[6]+' ('+x[5]+')'))||famAll.find(y=>y[0]===x[6]);},dep=(x,k=0)=>{const p=par(x);return p&&k<5?dep(p,k+1)+1:0;};
-for(const g in groups){const G=groups[g];for(let q=0;q<G.length;q++){const p=par(G[q]);if(p&&!G.includes(p))G.push(p);}G.sort((x,y)=>dep(x)-dep(y)||famAll.indexOf(x)-famAll.indexOf(y));}
-const fam=famAll.length>1?Object.keys(groups).sort((p,q)=>(p?1:0)-(q?1:0)):[];
-const sn=x=>(fam.length>1?x[0].replace(/ \((Alolan|Galarian|Hisuian|Paldean)\)/,''):x[0]).replace(/</g,'&lt;');
-o.innerHTML=fam.map(g=>'<div class="fam">'+(fam.length>1?'<span class="rl">'+(g||'Normal')+'</span>':'')+groups[g].map(x=>x===B?'<span class="cur"><span'+nameStyle(x[0])+'>'+sn(x)+'</span></span>':'<button type="button" class="lnk" data-n="'+x[0].replace(/"/g,'&quot;')+'"><span'+nameStyle(x[0])+'>'+sn(x)+'</span></button>').join('')+'</div>').join('')+'<table><thead><tr><th>League</th><th>Rank</th><th>%</th><th>CP</th></tr></thead><tbody>'+rows+'</tbody></table>';
+o.innerHTML=famHtml(B)+'<table><thead><tr><th>League</th><th>Rank</th><th>%</th><th>CP</th></tr></thead><tbody>'+rows+'</tbody></table>';
 }
 const sug=$('sug');let hi=-1,items=[];
 function show(){const q=$('sp').value.trim().toLowerCase();if(!q){hide();return;}
@@ -752,6 +758,8 @@ function showTl(on){$('atlw').hidden=!on;$('arow').hidden=!on&&$('ashw').hidden;
 let ALAST=null;
 function runAuto(){if($('auto').hidden){ADIRTY=true;return;}ADIRTY=false;const x=AX=aFind($('asp').value);$('ashw').hidden=!(x&&x[7]&1);
 if(x){if(ALAST!==null&&x[1]!==ALAST)$('ash').checked=false;ALAST=x[1];}
+// related Pokémon as links, like the IV tab (only those that can be picked here)
+const ok=new Set(aList().map(e=>e[1])),fam=x?famLinks(x[1],n=>ok.has(n)):'';$('afam').innerHTML=fam;$('afam').hidden=!fam;
 if(x){ls.set('rf-auto',{n:x[1],sh:$('ash').checked});const ts=x[5].split('/');AQ=AQ.filter(t=>ts.includes(t));
 // a raid calculation for a type this Pokémon doesn't have is stopped, so its own types start right away
 if(AJOB&&!ts.includes(AJOB.t)){AJOB.cancel=true;AJOB=null;}}drawAuto();}
@@ -776,6 +784,7 @@ $('asp').addEventListener('click',()=>{if(asug.hidden)aShow();});
 $('asp').addEventListener('keydown',e=>{if(asug.hidden)return;const n=aitems.length;if(e.key==='ArrowDown')ahi=(ahi+1)%n;else if(e.key==='ArrowUp')ahi=(ahi-1+n)%n;else if(e.key==='Enter'||e.keyCode===13){e.preventDefault();aPick(ahi<0?0:ahi);return;}else if(e.key==='Escape'){aHide();return;}else return;e.preventDefault();[...asug.children].forEach((li,i)=>li.classList.toggle('on',i===ahi));});
 $('af').addEventListener('submit',e=>{e.preventDefault();if(!asug.hidden&&aitems.length)aPick(ahi<0?0:ahi);else{aHide();runAuto();$('asp').blur();}});
 $('ash').addEventListener('change',runAuto);
+$('afam').addEventListener('click',e=>{const b=e.target.closest('.lnk');if(b){$('asp').value=b.dataset.n;runAuto();}});
 // trainer level: one setting, shown in the Rocket and the Auto tab; typing in either updates the other
 $('atl').addEventListener('input',()=>{$('tl').value=$('atl').value;run();runAuto();});
 $('atl').addEventListener('focus',()=>$('atl').select());
